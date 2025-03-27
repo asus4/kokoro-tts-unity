@@ -1,5 +1,35 @@
 {
   "dependencies": {
+    "com.github.asus4.kokoro-tts": {
+      "version": "file:com.github.asus4.kokoro-tts",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.modules.audio": "1.0.0"
+      }
+    },
+    "com.github.asus4.onnxruntime": {
+      "version": "file:../../onnxruntime-unity/com.github.asus4.onnxruntime",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
+    "com.github.asus4.onnxruntime-extensions": {
+      "version": "file:../../onnxruntime-unity/com.github.asus4.onnxruntime-extensions",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.github.asus4.onnxruntime": "0.3.2"
+      }
+    },
+    "com.github.asus4.onnxruntime.unity": {
+      "version": "file:../../onnxruntime-unity/com.github.asus4.onnxruntime.unity",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.github.asus4.onnxruntime": "0.3.2"
+      }
+    },
     "com.unity.burst": {
       "version": "1.8.19",
       "depth": 2,
@@ -202,6 +232,12 @@
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.hierarchycore": "1.0.0"
       }
+    },
+    "com.unity.modules.unitywebrequest": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {}
     }
   }
 }

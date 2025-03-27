@@ -1,0 +1,26 @@
+{
+  "name": "com.github.asus4.kokoro-tts",
+  "version": "0.1.0",
+  "displayName": "Kokoro TTS",
+  "description": "Kokoro TTS for Unity",
+  "keywords": [
+    "tts",
+    "unity"
+  ],
+  "unity": "2022.3",
+  "unityRelease": "0f1",
+  "dependencies": {
+    "com.unity.modules.audio": "1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "repository": "https://github.com/asus4/kokoro-tts-unity.git"
+  },
+  "documentationUrl": "https://github.com/asus4/kokoro-tts-unity.git",
+  "changelogUrl": "https://github.com/asus4/kokoro-tts-unity/releases",
+  "licensesUrl": "https://github.com/asus4/kokoro-tts-unity/blob/main/LICENSE",
+  "author": {
+    "name": "Koki Ibukuro",
+    "url": "https://github.com/asus4"
+  }
+}
