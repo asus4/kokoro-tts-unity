@@ -4,6 +4,10 @@ using Kokoro;
 
 /// <summary>
 /// Basic usage of KokoroTTS.
+/// 
+/// Port of
+/// https://github.com/hexgrad/kokoro
+/// Licensed under Apache License 2.0
 /// </summary>
 sealed class KokoroTTSDemo : MonoBehaviour
 {

@@ -11,7 +11,7 @@ function print_usage() {
 }
 
 function switch_to_local() {
-    sed -i '' 's|"'"$1"'": "[^"]*"|"'"$1"'": "file:../../onnxruntime-unity/'"$1"'"|' $MANIFEST
+    sed -i '' 's|"'"$1"'": "[^"]*"|"'"$1"'": "file:../../../onnxruntime-unity/'"$1"'"|' $MANIFEST
 }
 
 function switch_to_npm() {

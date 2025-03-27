@@ -1,0 +1,23 @@
+{
+    "name": "Kokoro.Tests",
+    "rootNamespace": "Kokoro.Tests",
+    "references": [
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:effe5775fa53c49a39f54ea0433a395b",
+        "GUID:94b047caeaf434aa69f3e7995f09c7b7"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

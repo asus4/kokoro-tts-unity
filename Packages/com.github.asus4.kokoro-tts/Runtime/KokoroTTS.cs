@@ -1,26 +1,21 @@
 using System;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Unity;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Kokoro
 {
-    public class KokoroTTS : IDisposable
+    public sealed class KokoroTTS : TextToSpeechInference
     {
-        [SerializeField]
-        public class Options
+        [Serializable]
+        public class Options : TextToSpeechOptions
         {
-            public ExecutionProviderOptions executionProvider;
         }
 
-        public KokoroTTS(byte[] modelData, Options options = null)
+        public KokoroTTS(byte[] modelData, Options options) : base(modelData, options)
         {
-            Debug.Log("KokoroTTS constructor");
-        }
 
-        public void Dispose()
-        {
-            Debug.Log("KokoroTTS Dispose");
         }
     }
 }

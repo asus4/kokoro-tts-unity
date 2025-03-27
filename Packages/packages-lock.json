@@ -9,13 +9,13 @@
       }
     },
     "com.github.asus4.onnxruntime": {
-      "version": "file:../../onnxruntime-unity/com.github.asus4.onnxruntime",
+      "version": "file:../../../onnxruntime-unity/com.github.asus4.onnxruntime",
       "depth": 0,
       "source": "local",
       "dependencies": {}
     },
     "com.github.asus4.onnxruntime-extensions": {
-      "version": "file:../../onnxruntime-unity/com.github.asus4.onnxruntime-extensions",
+      "version": "file:../../../onnxruntime-unity/com.github.asus4.onnxruntime-extensions",
       "depth": 0,
       "source": "local",
       "dependencies": {
@@ -23,7 +23,7 @@
       }
     },
     "com.github.asus4.onnxruntime.unity": {
-      "version": "file:../../onnxruntime-unity/com.github.asus4.onnxruntime.unity",
+      "version": "file:../../../onnxruntime-unity/com.github.asus4.onnxruntime.unity",
       "depth": 0,
       "source": "local",
       "dependencies": {
