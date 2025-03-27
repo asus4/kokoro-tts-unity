@@ -1,16 +1,48 @@
+using System;
+using System.Threading.Tasks;
+using System.IO;
 using NUnit.Framework;
-using Unity.Mathematics;
+using Kokoro.Misaki;
+using UnityEngine;
 
 namespace Kokoro.Tests
 {
+    [Serializable]
+    internal class TestData
+    {
+        public Item[] data;
+
+
+        [Serializable]
+        internal class Item
+        {
+            public string text;
+            public string phonemes;
+            public MToken[] tokens;
+        }
+    }
+
     [TestFixture]
     public class G2PTests
     {
-        [TestCase(1000, 560, 1920, 1080, 1000, 8)] // landscape
-        [TestCase(560, 1000, 1080, 1920, 1000, 8)] // portrait
-        public void TestResizeToMaxSize(int expectedX, int expectedY, int inputX, int inputY, int maxSize, int alignmentSize)
-        {
+        const string DATA_DIR = "Packages/com.github.asus4.kokoro-tts/Tests/Data/";
 
+        [TestCase(LanguageCode.En_US, "american_test_data.json")]
+        [TestCase(LanguageCode.En_GB, "british_test_data.json")]
+        public async Task TestEnglishG2P(LanguageCode lang, string fileName)
+        {
+            string filePath = Path.Combine(DATA_DIR, fileName);
+            string json = await File.ReadAllTextAsync(filePath);
+            var testData = JsonUtility.FromJson<TestData>(json);
+            Assert.That(testData.data, Is.Not.Empty, "No test data found");
+
+            using var g2p = new EnglishG2P(lang);
+            foreach (var item in testData.data)
+            {
+                var (phonemes, tokens) = g2p.Convert(item.text);
+                Assert.That(phonemes, Is.EqualTo(item.phonemes), $"Phoneme mismatch for text: {item.text}");
+                Assert.That(tokens.Length, Is.EqualTo(item.tokens.Length), $"Token count mismatch for text: {item.text}");
+            }
         }
     }
 }

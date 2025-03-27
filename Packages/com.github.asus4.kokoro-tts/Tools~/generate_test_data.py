@@ -112,8 +112,12 @@ def make_test_json(test_data, g2p, jsonFilePath):
 
         results.append({"text": test, "phonemes": phonemes, "tokens": dict_tokens})
 
+    wrapper = {
+        "data": results,
+    }
+
     with open(jsonFilePath, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
+        json.dump(wrapper, f, ensure_ascii=False, indent=2)
 
 
 g2pA = en.G2P(trf=False, british=False, fallback=None)
