@@ -4,6 +4,7 @@ using System.IO;
 using NUnit.Framework;
 using Kokoro.Misaki;
 using UnityEngine;
+using Unity.Serialization.Json;
 
 namespace Kokoro.Tests
 {

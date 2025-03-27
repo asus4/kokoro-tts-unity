@@ -2,8 +2,7 @@
     "name": "Kokoro.Tests",
     "rootNamespace": "Kokoro.Tests",
     "references": [
-        "GUID:d8b63aba1907145bea998dd612889d6b",
-        "GUID:effe5775fa53c49a39f54ea0433a395b",
+        "GUID:2765e68924a08a94ea0ea66b31c0168f",
         "GUID:94b047caeaf434aa69f3e7995f09c7b7"
     ],
     "includePlatforms": [

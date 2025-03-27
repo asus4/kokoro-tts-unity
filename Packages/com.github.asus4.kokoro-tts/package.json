@@ -10,6 +10,7 @@
   "unity": "2022.3",
   "unityRelease": "0f1",
   "dependencies": {
+    "com.unity.serialization": "3.1.2",
     "com.unity.modules.audio": "1.0.0"
   },
   "repository": {
