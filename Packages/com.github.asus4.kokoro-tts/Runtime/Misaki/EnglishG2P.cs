@@ -10,8 +10,7 @@ using Unity.Serialization.Json;
 
 namespace Kokoro.Misaki
 {
-    // Equivalent to Python's dataclass TokenContext
-    public class TokenContext
+    internal class TokenContext
     {
         public bool? FutureVowel { get; set; } = null;
         public bool FutureTo { get; set; } = false;
@@ -19,12 +18,11 @@ namespace Kokoro.Misaki
 
     public partial class EnglishG2P : IG2P, IDisposable
     {
-        readonly HashSet<char> DIPHTHONGS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'ʤ', 'ʧ' };
-        readonly HashSet<char> VOWELS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'a', 'i', 'u', 'æ', 'ɑ', 'ɒ', 'ɔ', 'ə', 'ɛ', 'ɜ', 'ɪ', 'ʊ', 'ʌ', 'ᵻ' };
-        readonly HashSet<char> CONSONANTS = new() { 'b', 'd', 'f', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 's', 't', 'v', 'w', 'z', 'ð', 'ŋ', 'ɡ', 'ɹ', 'ɾ', 'ʃ', 'ʒ', 'ʤ', 'ʧ', 'θ' };
-        readonly HashSet<string> PUNCT_TAGS = new() { ".", ",", "-LRB-", "-RRB-", "``", "\"\"", "''", ":", "$", "#", "NFP" };
-
-        readonly Dictionary<string, string> PUNCT_TAG_PHONEMES = new() {
+        static readonly HashSet<char> DIPHTHONGS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'ʤ', 'ʧ' };
+        static readonly HashSet<char> VOWELS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'a', 'i', 'u', 'æ', 'ɑ', 'ɒ', 'ɔ', 'ə', 'ɛ', 'ɜ', 'ɪ', 'ʊ', 'ʌ', 'ᵻ' };
+        static readonly HashSet<char> CONSONANTS = new() { 'b', 'd', 'f', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 's', 't', 'v', 'w', 'z', 'ð', 'ŋ', 'ɡ', 'ɹ', 'ɾ', 'ʃ', 'ʒ', 'ʤ', 'ʧ', 'θ' };
+        static readonly HashSet<string> PUNCT_TAGS = new() { ".", ",", "-LRB-", "-RRB-", "``", "\"\"", "''", ":", "$", "#", "NFP" };
+        static readonly Dictionary<string, string> PUNCT_TAG_PHONEMES = new() {
             { "-LRB-", "(" },
             { "-RRB-", ")" },
             { "``", "\u8220" },
@@ -32,41 +30,25 @@ namespace Kokoro.Misaki
             { "''", "\u8221" }
         };
 
-        readonly Dictionary<string, (string, string)> CURRENCIES = new()
-        {
-            { "$",
-            ("dollar", "cent")
-        },
-            { "£", ("pound", "pence") },
-            { "€", ("euro", "cent") }
-        };
-
-        public LanguageCode Lang { get; }
-        private Lexicon _lexicon;
-        private string _unk = "❓";
+        public readonly LanguageCode LanguageCode;
+        private readonly Lexicon lexicon;
+        private readonly string unk;
 
         // Main constructor
-        public EnglishG2P(LanguageCode lang)
+        public EnglishG2P(LanguageCode lang, string unk = "❓")
         {
-            Lang = lang;
-            _lexicon = new Lexicon(lang == LanguageCode.En_GB);
+            this.unk = unk;
+            LanguageCode = lang;
+            lexicon = new Lexicon(lang == LanguageCode.En_GB);
+        }
+
+        public void Dispose()
+        {
+            // Clean up resources if needed
         }
 
         // Implementation of IG2P.Convert
         public (string, ReadOnlyMemory<MToken>) Convert(string text)
-        {
-            // Process the text to get phonemes and tokens
-            var (phonemes, tokens) = ProcessText(text);
-
-            // Convert ExtendedMTokens back to regular MTokens
-            var resultTokens = tokens.Select(t => new MToken(
-                t.Text, t.Tag, t.WhiteSpace, t.Phonomes, t.StartTS, t.EndTS
-            )).ToArray();
-
-            return (phonemes, new ReadOnlyMemory<MToken>(resultTokens));
-        }
-
-        private (string, List<MToken>) ProcessText(string text)
         {
             // 1. Preprocess the text
             var (preprocessedText, rawTokens, features) = Preprocess(text);
@@ -78,10 +60,9 @@ namespace Kokoro.Misaki
             ApplyTokenConversion(tokens);
 
             // 4. Generate phonemes
-            string result = string.Join("", tokens.Select(tk =>
-                (tk.Phonomes == null ? _unk : tk.Phonomes) + tk.WhiteSpace));
+            string phonemes = string.Join("", tokens.Select(tk => (tk.Phonomes == null ? unk : tk.Phonomes) + tk.WhiteSpace));
 
-            return (result, tokens);
+            return (phonemes, tokens.ToArray());
         }
 
         // Merge multiple tokens into one
@@ -206,7 +187,7 @@ namespace Kokoro.Misaki
             {
                 if (token.Phonomes == null)
                 {
-                    var (phonemes, rating) = _lexicon.GetWord(token, token.Tag, token._.Stress, ctx);
+                    var (phonemes, rating) = lexicon.GetWord(token, token.Tag, token._.Stress, ctx);
                     token.Phonomes = phonemes;
                     token._.Rating = rating;
                 }
@@ -246,11 +227,6 @@ namespace Kokoro.Misaki
                 FutureVowel = vowel,
                 FutureTo = futureTo
             };
-        }
-
-        public void Dispose()
-        {
-            // Clean up resources if needed
         }
 
 
