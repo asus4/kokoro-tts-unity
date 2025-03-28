@@ -150,7 +150,7 @@ namespace Kokoro.Misaki
         }
 
         // Preprocess text
-        private (string, List<string>, Dictionary<int, object>) Preprocess(string text)
+        internal static (string, List<string>, Dictionary<int, object>) Preprocess(string text)
         {
             // Simple implementation - in a real app, you'd parse Markdown links, etc.
             return (text, text.Split(' ').ToList(), new Dictionary<int, object>());

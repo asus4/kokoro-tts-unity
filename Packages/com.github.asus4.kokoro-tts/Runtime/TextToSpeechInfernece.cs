@@ -16,9 +16,9 @@ namespace Microsoft.ML.OnnxRuntime.Unity
 
     public abstract class TextToSpeechInference : IDisposable
     {
-        protected readonly InferenceSession session;
-        protected readonly SessionOptions sessionOptions;
-        protected readonly RunOptions runOptions;
+        protected InferenceSession session;
+        protected SessionOptions sessionOptions;
+        protected RunOptions runOptions;
         bool disposed;
 
         public TextToSpeechInference(byte[] modelData, TextToSpeechOptions options)
@@ -70,7 +70,8 @@ namespace Microsoft.ML.OnnxRuntime.Unity
 
         public virtual async Awaitable<ReadOnlyMemory<byte>> RunAsync(string input, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException("RunAsync is not implemented");
+            Debug.Log($"Generating: {input}");
+            return Array.Empty<byte>();
         }
     }
 }

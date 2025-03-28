@@ -79,3 +79,5 @@ crashlytics-build.properties
 # Custom
 *.onnx
 *.onnx.meta
+Assets/StreamingAssets/Voices/*.bin*
+
