@@ -14,7 +14,7 @@ using UnityEngine.UIElements;
 /// https://github.com/hexgrad/kokoro
 /// Licensed under Apache License 2.0
 /// </summary>
-[RequireComponent(typeof(UIDocument))]
+[RequireComponent(typeof(UIDocument), typeof(AudioSource))]
 sealed class KokoroTTSDemo : MonoBehaviour
 {
     [SerializeField]
@@ -30,15 +30,25 @@ sealed class KokoroTTSDemo : MonoBehaviour
     [SerializeField]
     string speechText = "Life is like a box of chocolates. You never know what you're gonna get.";
 
+    [SerializeField]
+    [Range(0.1f, 5f)]
+    float speechSpeed = 1f;
+
     KokoroTTS tts;
+    AudioSource audioSource;
 
     async void Start()
     {
+        audioSource = GetComponent<AudioSource>();
+
         // Setup Kokoro
         Debug.Log("Loading model...");
         CancellationToken cancellationToken = destroyCancellationToken;
         byte[] modelData = await modelUrl.Load(cancellationToken);
-        tts = await KokoroTTS.CreateAsync(modelData, options, cancellationToken);
+        await Awaitable.MainThreadAsync();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        tts = new KokoroTTS(modelData, options);
         Debug.Log("TTS created");
 
         // Setup UI
@@ -53,7 +63,7 @@ sealed class KokoroTTSDemo : MonoBehaviour
             await LoadVoiceAsync(index);
             Debug.Log($"Selected voice: {voiceList[index]}");
         });
-        voicesDropdown.index = 0;
+        voicesDropdown.index = 1;
 
         var ttsTextField = root.Q<TextField>("TtsTextField");
         ttsTextField.value = speechText;
@@ -62,7 +72,7 @@ sealed class KokoroTTSDemo : MonoBehaviour
 
         var speechButton = root.Q<Button>("SpeechButton");
         speechButton.RegisterCallback<ClickEvent>(async evt
-            => await tts.RunAsync(speechText, cancellationToken));
+            => await GenerateAsync());
     }
 
     void OnDestroy()
@@ -74,6 +84,21 @@ sealed class KokoroTTSDemo : MonoBehaviour
     {
         string url = "file://" + Path.Combine(Application.streamingAssetsPath, "Voices", $"{voiceList[index]}.bin");
         await tts.LoadVoiceAsync(new Uri(url), destroyCancellationToken);
+    }
+
+    async Awaitable GenerateAsync()
+    {
+        Debug.Log($"Generating speech: {speechText}");
+        tts.Speed = speechSpeed;
+        var clip = await tts.GenerateAudioClipAsync(speechText, destroyCancellationToken);
+        Debug.Log("Speech generated");
+
+        if (audioSource.clip != null)
+        {
+            Destroy(audioSource.clip);
+        }
+        audioSource.clip = clip;
+        audioSource.Play();
     }
 
     /// <summary>
