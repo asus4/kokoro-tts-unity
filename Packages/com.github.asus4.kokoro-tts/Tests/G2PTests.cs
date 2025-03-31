@@ -19,7 +19,6 @@ namespace Kokoro.Tests
         {
             public string text;
             public string phonemes;
-            public MToken[] tokens;
         }
     }
 
@@ -40,9 +39,8 @@ namespace Kokoro.Tests
             using var g2p = new EnglishG2P(lang);
             foreach (var item in testData.data)
             {
-                var (phonemes, tokens) = g2p.Convert(item.text);
+                var phonemes = g2p.Convert(item.text);
                 Assert.That(phonemes, Is.EqualTo(item.phonemes), $"Phoneme mismatch for text: {item.text}");
-                Assert.That(tokens.Length, Is.EqualTo(item.tokens.Length), $"Token count mismatch for text: {item.text}");
             }
         }
     }

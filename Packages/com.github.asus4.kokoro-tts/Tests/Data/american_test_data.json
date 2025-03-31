@@ -2,955 +2,163 @@
   "data": [
     {
       "text": "‘Hello’",
-      "phonemes": "“həlˈO”",
-      "tokens": [
-        {
-          "text": "‘",
-          "tag": "``",
-          "whitespace": "",
-          "phonemes": "“",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Hello",
-          "tag": "UH",
-          "whitespace": "",
-          "phonemes": "həlˈO",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "’",
-          "tag": "''",
-          "whitespace": "",
-          "phonemes": "”",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "“həlˈO”"
     },
     {
       "text": "‘Test’ and ‘Example’",
-      "phonemes": "“tˈɛst” ænd “ɪɡzˈæmpəl”",
-      "tokens": [
-        {
-          "text": "‘",
-          "tag": "``",
-          "whitespace": "",
-          "phonemes": "“",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Test",
-          "tag": "NN",
-          "whitespace": "",
-          "phonemes": "tˈɛst",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "’",
-          "tag": "''",
-          "whitespace": " ",
-          "phonemes": "”",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "and",
-          "tag": "CC",
-          "whitespace": " ",
-          "phonemes": "ænd",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "‘",
-          "tag": "``",
-          "whitespace": "",
-          "phonemes": "“",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Example",
-          "tag": "NN",
-          "whitespace": "",
-          "phonemes": "ɪɡzˈæmpəl",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "’",
-          "tag": "''",
-          "whitespace": "",
-          "phonemes": "”",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "“tˈɛst” ænd “ɪɡzˈæmpəl”"
     },
     {
       "text": "«Bonjour»",
-      "phonemes": "“bɑnʒˈʊɹ❓",
-      "tokens": [
-        {
-          "text": "«",
-          "tag": "``",
-          "whitespace": "",
-          "phonemes": "“",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Bonjour»",
-          "tag": "NN",
-          "whitespace": "",
-          "phonemes": "bɑnʒˈʊɹ❓",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "“bɑnʒˈʊɹ❓"
     },
     {
       "text": "«Test «nested» quotes»",
-      "phonemes": "“tˈɛst “nˈɛstᵻd❓ kwˈOts❓",
-      "tokens": [
-        {
-          "text": "«",
-          "tag": "``",
-          "whitespace": "",
-          "phonemes": "“",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Test",
-          "tag": "NNP",
-          "whitespace": " ",
-          "phonemes": "tˈɛst",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "«",
-          "tag": "``",
-          "whitespace": "",
-          "phonemes": "“",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "nested»",
-          "tag": "VBN",
-          "whitespace": " ",
-          "phonemes": "nˈɛstᵻd❓",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "quotes»",
-          "tag": "NNS",
-          "whitespace": "",
-          "phonemes": "kwˈOts❓",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "“tˈɛst “nˈɛstᵻd❓ kwˈOts❓"
     },
     {
       "text": "(Hello)",
-      "phonemes": "(həlˈO)",
-      "tokens": [
-        {
-          "text": "(",
-          "tag": "-LRB-",
-          "whitespace": "",
-          "phonemes": "(",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Hello",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "həlˈO",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ")",
-          "tag": "-RRB-",
-          "whitespace": "",
-          "phonemes": ")",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "(həlˈO)"
     },
     {
       "text": "(Nested (Parentheses))",
-      "phonemes": "(nˈɛstᵻd (pəɹˈɛnθəsiz))",
-      "tokens": [
-        {
-          "text": "(",
-          "tag": "-LRB-",
-          "whitespace": "",
-          "phonemes": "(",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Nested",
-          "tag": "NNP",
-          "whitespace": " ",
-          "phonemes": "nˈɛstᵻd",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "(",
-          "tag": "-LRB-",
-          "whitespace": "",
-          "phonemes": "(",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Parentheses",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "pəɹˈɛnθəsiz",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ")",
-          "tag": "-RRB-",
-          "whitespace": "",
-          "phonemes": ")",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ")",
-          "tag": "-RRB-",
-          "whitespace": "",
-          "phonemes": ")",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "(nˈɛstᵻd (pəɹˈɛnθəsiz))"
     },
     {
       "text": "こんにちは、世界！",
-      "phonemes": "❓❓❓",
-      "tokens": [
-        {
-          "text": "こんにちは、世界",
-          "tag": "VBN",
-          "whitespace": "",
-          "phonemes": "❓❓❓",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "！",
-          "tag": ".",
-          "whitespace": "",
-          "phonemes": "",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "❓❓❓"
     },
     {
       "text": "これはテストです：はい？",
-      "phonemes": "❓❓❓”",
-      "tokens": [
-        {
-          "text": "これはテストです：はい",
-          "tag": "NN",
-          "whitespace": "",
-          "phonemes": "❓❓❓",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "？",
-          "tag": "''",
-          "whitespace": "",
-          "phonemes": "”",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "❓❓❓”"
     },
     {
       "text": "Hello World",
-      "phonemes": "həlˈO wˈɜɹld",
-      "tokens": [
-        {
-          "text": "Hello",
-          "tag": "UH",
-          "whitespace": " ",
-          "phonemes": "həlˈO",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "World",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "wˈɜɹld",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "həlˈO wˈɜɹld"
     },
     {
       "text": "Hello   World",
-      "phonemes": "həlˈO ❓❓ wˈɜɹld",
-      "tokens": [
-        {
-          "text": "Hello",
-          "tag": "UH",
-          "whitespace": " ",
-          "phonemes": "həlˈO",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "  World",
-          "tag": "NN",
-          "whitespace": "",
-          "phonemes": "❓❓ wˈɜɹld",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "həlˈO ❓❓ wˈɜɹld"
     },
     {
       "text": "Hello\n   \nWorld",
-      "phonemes": "həlˈO❓❓❓❓❓ wˈɜɹld",
-      "tokens": [
-        {
-          "text": "Hello\n   \nWorld",
-          "tag": "UH",
-          "whitespace": "",
-          "phonemes": "həlˈO❓❓❓❓❓ wˈɜɹld",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "həlˈO❓❓❓❓❓ wˈɜɹld"
     },
     {
       "text": "Dr. Smith",
-      "phonemes": "dˈɑktəɹ smˈɪθ",
-      "tokens": [
-        {
-          "text": "Dr.",
-          "tag": "NNP",
-          "whitespace": " ",
-          "phonemes": "dˈɑktəɹ",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Smith",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "smˈɪθ",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "dˈɑktəɹ smˈɪθ"
     },
     {
       "text": "DR. Brown",
-      "phonemes": "dˈɑktəɹ. bɹˈWn",
-      "tokens": [
-        {
-          "text": "DR",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "dˈɑktəɹ",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ".",
-          "tag": ".",
-          "whitespace": " ",
-          "phonemes": ".",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Brown",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "bɹˈWn",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "dˈɑktəɹ. bɹˈWn"
     },
     {
       "text": "Mr. Smith",
-      "phonemes": "mˈɪstəɹ smˈɪθ",
-      "tokens": [
-        {
-          "text": "Mr.",
-          "tag": "NNP",
-          "whitespace": " ",
-          "phonemes": "mˈɪstəɹ",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Smith",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "smˈɪθ",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "mˈɪstəɹ smˈɪθ"
     },
     {
       "text": "MR. Anderson",
-      "phonemes": "mˈɪstəɹ. ˈændəɹsᵊn",
-      "tokens": [
-        {
-          "text": "MR",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "mˈɪstəɹ",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ".",
-          "tag": ".",
-          "whitespace": " ",
-          "phonemes": ".",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Anderson",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "ˈændəɹsᵊn",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "mˈɪstəɹ. ˈændəɹsᵊn"
     },
     {
       "text": "Ms. Taylor",
-      "phonemes": "mˈɪz tˈAləɹ",
-      "tokens": [
-        {
-          "text": "Ms.",
-          "tag": "NNP",
-          "whitespace": " ",
-          "phonemes": "mˈɪz",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Taylor",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "tˈAləɹ",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "mˈɪz tˈAləɹ"
     },
     {
       "text": "MS. Carter",
-      "phonemes": "ˌɛmˈɛs. kˈɑɹTəɹ",
-      "tokens": [
-        {
-          "text": "MS",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "ˌɛmˈɛs",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ".",
-          "tag": ".",
-          "whitespace": " ",
-          "phonemes": ".",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Carter",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "kˈɑɹTəɹ",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "ˌɛmˈɛs. kˈɑɹTəɹ"
     },
     {
       "text": "Mrs. Johnson",
-      "phonemes": "mˈɪsɪz ʤˈɑnsᵊn",
-      "tokens": [
-        {
-          "text": "Mrs.",
-          "tag": "NNP",
-          "whitespace": " ",
-          "phonemes": "mˈɪsɪz",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Johnson",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "ʤˈɑnsᵊn",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "mˈɪsɪz ʤˈɑnsᵊn"
     },
     {
       "text": "MRS. Wilson",
-      "phonemes": "mˈɪsɪz. wˈɪlsᵊn",
-      "tokens": [
-        {
-          "text": "MRS",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "mˈɪsɪz",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ".",
-          "tag": ".",
-          "whitespace": " ",
-          "phonemes": ".",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Wilson",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "wˈɪlsᵊn",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "mˈɪsɪz. wˈɪlsᵊn"
     },
     {
       "text": "Apples, oranges, etc.",
-      "phonemes": "ˈæpᵊlz, ˈɔɹᵊnʤᵻz, ɛtsˈɛTəɹə.",
-      "tokens": [
-        {
-          "text": "Apples",
-          "tag": "NNS",
-          "whitespace": "",
-          "phonemes": "ˈæpᵊlz",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ",",
-          "tag": ",",
-          "whitespace": " ",
-          "phonemes": ",",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "oranges",
-          "tag": "NNS",
-          "whitespace": "",
-          "phonemes": "ˈɔɹᵊnʤᵻz",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ",",
-          "tag": ",",
-          "whitespace": " ",
-          "phonemes": ",",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "etc",
-          "tag": "FW",
-          "whitespace": "",
-          "phonemes": "ɛtsˈɛTəɹə",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ".",
-          "tag": ".",
-          "whitespace": "",
-          "phonemes": ".",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "ˈæpᵊlz, ˈɔɹᵊnʤᵻz, ɛtsˈɛTəɹə."
     },
     {
       "text": "Apples, etc. Pears.",
-      "phonemes": "ˈæpᵊlz, ɛtsˈɛTəɹə pˈɛɹz.",
-      "tokens": [
-        {
-          "text": "Apples",
-          "tag": "NNPS",
-          "whitespace": "",
-          "phonemes": "ˈæpᵊlz",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ",",
-          "tag": ",",
-          "whitespace": " ",
-          "phonemes": ",",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "etc.",
-          "tag": "FW",
-          "whitespace": " ",
-          "phonemes": "ɛtsˈɛTəɹə",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "Pears",
-          "tag": "NNS",
-          "whitespace": "",
-          "phonemes": "pˈɛɹz",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": ".",
-          "tag": ".",
-          "whitespace": "",
-          "phonemes": ".",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "ˈæpᵊlz, ɛtsˈɛTəɹə pˈɛɹz."
     },
     {
       "text": "Yeah",
-      "phonemes": "jˈɛə",
-      "tokens": [
-        {
-          "text": "Yeah",
-          "tag": "UH",
-          "whitespace": "",
-          "phonemes": "jˈɛə",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "jˈɛə"
     },
     {
       "text": "yeah",
-      "phonemes": "jˈɛə",
-      "tokens": [
-        {
-          "text": "yeah",
-          "tag": "UH",
-          "whitespace": "",
-          "phonemes": "jˈɛə",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "jˈɛə"
     },
     {
       "text": "1990",
-      "phonemes": "nˌIntˈin nˈIndi",
-      "tokens": [
-        {
-          "text": "1990",
-          "tag": "CD",
-          "whitespace": "",
-          "phonemes": "nˌIntˈin nˈIndi",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "nˌIntˈin nˈIndi"
     },
     {
       "text": "12:34",
-      "phonemes": "twˈɛlv❓ θˈɜɹTi fˈɔɹ",
-      "tokens": [
-        {
-          "text": "12:34",
-          "tag": "CD",
-          "whitespace": "",
-          "phonemes": "twˈɛlv❓ θˈɜɹTi fˈɔɹ",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "twˈɛlv❓ θˈɜɹTi fˈɔɹ"
     },
     {
       "text": "2022s",
-      "phonemes": "twˈɛnti twˈɛnti tˈuz",
-      "tokens": [
-        {
-          "text": "2022s",
-          "tag": "CD",
-          "whitespace": "",
-          "phonemes": "twˈɛnti twˈɛnti tˈuz",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "twˈɛnti twˈɛnti tˈuz"
     },
     {
       "text": "1,000",
-      "phonemes": "wˈʌn θˈWzᵊnd",
-      "tokens": [
-        {
-          "text": "1,000",
-          "tag": "CD",
-          "whitespace": "",
-          "phonemes": "wˈʌn θˈWzᵊnd",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "wˈʌn θˈWzᵊnd"
     },
     {
       "text": "12,345,678",
-      "phonemes": "twˈɛlv mˈɪljᵊn θɹˈi hˈʌndɹəd fˈɔɹTi fˈIv θˈWzᵊnd sˈɪks hˈʌndɹəd sˈɛvənti ˈAt",
-      "tokens": [
-        {
-          "text": "12,345,678",
-          "tag": "CD",
-          "whitespace": "",
-          "phonemes": "twˈɛlv mˈɪljᵊn θɹˈi hˈʌndɹəd fˈɔɹTi fˈIv θˈWzᵊnd sˈɪks hˈʌndɹəd sˈɛvənti ˈAt",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "twˈɛlv mˈɪljᵊn θɹˈi hˈʌndɹəd fˈɔɹTi fˈIv θˈWzᵊnd sˈɪks hˈʌndɹəd sˈɛvənti ˈAt"
     },
     {
       "text": "$100",
-      "phonemes": "wˈʌn hˈʌndɹəd dˈɑləɹz",
-      "tokens": [
-        {
-          "text": "$",
-          "tag": "$",
-          "whitespace": "",
-          "phonemes": "",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "100",
-          "tag": "CD",
-          "whitespace": "",
-          "phonemes": "wˈʌn hˈʌndɹəd dˈɑləɹz",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "wˈʌn hˈʌndɹəd dˈɑləɹz"
     },
     {
       "text": "£1.50",
-      "phonemes": "wˈʌn pˈWnd ænd fˈɪfti pˈɛns",
-      "tokens": [
-        {
-          "text": "£",
-          "tag": "$",
-          "whitespace": "",
-          "phonemes": "",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "1.50",
-          "tag": "CD",
-          "whitespace": "",
-          "phonemes": "wˈʌn pˈWnd ænd fˈɪfti pˈɛns",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "wˈʌn pˈWnd ænd fˈɪfti pˈɛns"
     },
     {
       "text": "12.34",
-      "phonemes": "twˈɛlv pYnt θɹˈi fˈɔɹ",
-      "tokens": [
-        {
-          "text": "12.34",
-          "tag": "CD",
-          "whitespace": "",
-          "phonemes": "twˈɛlv pYnt θɹˈi fˈɔɹ",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "twˈɛlv pYnt θɹˈi fˈɔɹ"
     },
     {
       "text": "0.01",
-      "phonemes": "zˈɪɹO pYnt zˈɪɹO wˈʌn",
-      "tokens": [
-        {
-          "text": "0.01",
-          "tag": "CD",
-          "whitespace": "",
-          "phonemes": "zˈɪɹO pYnt zˈɪɹO wˈʌn",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "zˈɪɹO pYnt zˈɪɹO wˈʌn"
     },
     {
       "text": "10-20",
-      "phonemes": "tˌɛntwˈɛnti",
-      "tokens": [
-        {
-          "text": "10-20",
-          "tag": "CD",
-          "whitespace": "",
-          "phonemes": "tˌɛntwˈɛnti",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "tˌɛntwˈɛnti"
     },
     {
       "text": "5-10",
-      "phonemes": "fˈIvtˌɛn",
-      "tokens": [
-        {
-          "text": "5-10",
-          "tag": "CD",
-          "whitespace": "",
-          "phonemes": "fˈIvtˌɛn",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "fˈIvtˌɛn"
     },
     {
       "text": "10S",
-      "phonemes": "tˈɛn ˈɛs",
-      "tokens": [
-        {
-          "text": "10S",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "tˈɛn ˈɛs",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "tˈɛn ˈɛs"
     },
     {
       "text": "5S",
-      "phonemes": "fˈIv ˈɛs",
-      "tokens": [
-        {
-          "text": "5S",
-          "tag": "NNS",
-          "whitespace": "",
-          "phonemes": "fˈIv ˈɛs",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "fˈIv ˈɛs"
     },
     {
       "text": "Cat's tail",
-      "phonemes": "kˈæts tˈAl",
-      "tokens": [
-        {
-          "text": "Cat's",
-          "tag": "NNP",
-          "whitespace": " ",
-          "phonemes": "kˈæts",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "tail",
-          "tag": "NN",
-          "whitespace": "",
-          "phonemes": "tˈAl",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "kˈæts tˈAl"
     },
     {
       "text": "X's mark",
-      "phonemes": "ˈɛksᵻz mˈɑɹk",
-      "tokens": [
-        {
-          "text": "X's",
-          "tag": "NNS",
-          "whitespace": " ",
-          "phonemes": "ˈɛksᵻz",
-          "start_ts": null,
-          "end_ts": null
-        },
-        {
-          "text": "mark",
-          "tag": "NN",
-          "whitespace": "",
-          "phonemes": "mˈɑɹk",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "ˈɛksᵻz mˈɑɹk"
     },
     {
       "text": "U.S.A.",
-      "phonemes": "jˌuˌɛsˈA",
-      "tokens": [
-        {
-          "text": "U.S.A.",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "jˌuˌɛsˈA",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "jˌuˌɛsˈA"
     },
     {
       "text": "A.B.C",
-      "phonemes": "ˌAbˌisˈi",
-      "tokens": [
-        {
-          "text": "A.B.C",
-          "tag": "NNP",
-          "whitespace": "",
-          "phonemes": "ˌAbˌisˈi",
-          "start_ts": null,
-          "end_ts": null
-        }
-      ]
+      "phonemes": "ˌAbˌisˈi"
     }
   ]
 }

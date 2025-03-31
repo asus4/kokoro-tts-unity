@@ -18,7 +18,7 @@ namespace Kokoro.Misaki
         public string Text { get; internal set; }
         public string Tag { get; internal set; }
         public string WhiteSpace { get; internal set; }
-        public string Phonomes { get; internal set; }
+        public string Phonemes { get; internal set; }
         public float? StartTS { get; internal set; }
         public float? EndTS { get; internal set; }
 
@@ -31,7 +31,7 @@ namespace Kokoro.Misaki
             Text = text;
             Tag = tag;
             WhiteSpace = whiteSpace;
-            Phonomes = phonemes;
+            Phonemes = phonemes;
             StartTS = startTS;
             EndTS = endTS;
         }

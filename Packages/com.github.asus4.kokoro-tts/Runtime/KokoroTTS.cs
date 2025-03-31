@@ -70,11 +70,12 @@ namespace Kokoro
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
+            g2p?.Dispose();
+
             foreach (var input in inputs)
             {
                 input.Dispose();
             }
-
             if (inputTokensBuffer != null)
             {
                 ArrayPool<long>.Shared.Return(inputTokensBuffer);

@@ -108,9 +108,8 @@ def make_test_json(test_data, g2p, jsonFilePath):
     for test in test_data:
         phonemes, tokens = g2p(test)
         # convert tokens dataclass to dict
-        dict_tokens = [token_to_dict(token) for token in tokens]
-
-        results.append({"text": test, "phonemes": phonemes, "tokens": dict_tokens})
+        # dict_tokens = [token_to_dict(token) for token in tokens]
+        results.append({"text": test, "phonemes": phonemes})
 
     wrapper = {
         "data": results,

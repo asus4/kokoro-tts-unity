@@ -16,7 +16,7 @@ namespace Kokoro.Misaki
         public bool FutureTo { get; set; } = false;
     }
 
-    public partial class EnglishG2P : IG2P, IDisposable
+    public partial class EnglishG2P : IG2P
     {
         static readonly HashSet<char> DIPHTHONGS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'ʤ', 'ʧ' };
         static readonly HashSet<char> VOWELS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'a', 'i', 'u', 'æ', 'ɑ', 'ɒ', 'ɔ', 'ə', 'ɛ', 'ɜ', 'ɪ', 'ʊ', 'ʌ', 'ᵻ' };
@@ -48,7 +48,7 @@ namespace Kokoro.Misaki
         }
 
         // Implementation of IG2P.Convert
-        public (string, ReadOnlyMemory<MToken>) Convert(string text)
+        public string Convert(string text)
         {
             // 1. Preprocess the text
             var (preprocessedText, rawTokens, features) = Preprocess(text);
@@ -60,9 +60,8 @@ namespace Kokoro.Misaki
             ApplyTokenConversion(tokens);
 
             // 4. Generate phonemes
-            string phonemes = string.Join("", tokens.Select(tk => (tk.Phonomes == null ? unk : tk.Phonomes) + tk.WhiteSpace));
-
-            return (phonemes, tokens.ToArray());
+            string phonemes = string.Join("", tokens.Select(tk => (tk.Phonemes ?? unk) + tk.WhiteSpace));
+            return phonemes;
         }
 
         // Merge multiple tokens into one
@@ -95,11 +94,11 @@ namespace Kokoro.Misaki
                 {
                     if (tk._.PreSpace && phonemeBuilder.Length > 0 &&
                         !char.IsWhiteSpace(phonemeBuilder[phonemeBuilder.Length - 1]) &&
-                        tk.Phonomes != null)
+                        tk.Phonemes != null)
                     {
                         phonemeBuilder.Append(" ");
                     }
-                    phonemeBuilder.Append(tk.Phonomes == null ? unk : tk.Phonomes);
+                    phonemeBuilder.Append(tk.Phonemes == null ? unk : tk.Phonemes);
                 }
                 phonemes = phonemeBuilder.ToString();
             }
@@ -185,15 +184,15 @@ namespace Kokoro.Misaki
 
             foreach (var token in tokens)
             {
-                if (token.Phonomes == null)
+                if (token.Phonemes == null)
                 {
                     var (phonemes, rating) = lexicon.GetWord(token, token.Tag, token._.Stress, ctx);
-                    token.Phonomes = phonemes;
+                    token.Phonemes = phonemes;
                     token._.Rating = rating;
                 }
 
                 // Update context for next iteration
-                ctx = UpdateContext(ctx, token.Phonomes, token);
+                ctx = UpdateContext(ctx, token.Phonemes, token);
             }
         }
 

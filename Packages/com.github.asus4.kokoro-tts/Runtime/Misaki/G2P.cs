@@ -4,9 +4,8 @@ namespace Kokoro.Misaki
 {
 
 
-    public interface IG2P
+    public interface IG2P : IDisposable
     {
-        (string, ReadOnlyMemory<MToken>) Convert(string text);
-
+        string Convert(string text);
     }
 }
