@@ -1,11 +1,11 @@
 #nullable enable
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Threading;
-using Microsoft.ML.OnnxRuntime;
-using Microsoft.ML.OnnxRuntime.Unity;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace Microsoft.ML.OnnxRuntime.Unity
 {
@@ -21,6 +21,7 @@ namespace Microsoft.ML.OnnxRuntime.Unity
         protected InferenceSession session;
         protected SessionOptions sessionOptions;
         protected RunOptions runOptions;
+        float[] outputAudioBuffer;
 
         bool disposed;
 
@@ -28,8 +29,6 @@ namespace Microsoft.ML.OnnxRuntime.Unity
 
         public TextToSpeechInference(byte[] modelData, TextToSpeechOptions options)
         {
-            Debug.Log($"model: {modelData.Length} bytes, options: {options.executionProvider}");
-
             try
             {
                 sessionOptions = new SessionOptions();
@@ -45,6 +44,8 @@ namespace Microsoft.ML.OnnxRuntime.Unity
                 throw e;
             }
             session.LogIOInfo();
+
+            outputAudioBuffer = ArrayPool<float>.Shared.Rent(AudioSampleRate * 10);
         }
 
         ~TextToSpeechInference()
@@ -69,12 +70,13 @@ namespace Microsoft.ML.OnnxRuntime.Unity
                 session?.Dispose();
                 sessionOptions?.Dispose();
                 runOptions?.Dispose();
+                if (outputAudioBuffer != null)
+                {
+                    ArrayPool<float>.Shared.Return(outputAudioBuffer);
+                }
             }
             disposed = true;
         }
-
-        protected abstract Awaitable<IReadOnlyCollection<OrtValue>> PreProcessAsync(string input, CancellationToken cancellationToken);
-        protected abstract ReadOnlyMemory<float> PostProcess(IReadOnlyList<OrtValue> outputs);
 
         public virtual async Awaitable<ReadOnlyMemory<float>> GenerateAsync(string input, CancellationToken cancellationToken)
         {
@@ -105,6 +107,32 @@ namespace Microsoft.ML.OnnxRuntime.Unity
             var clip = AudioClip.Create("TTS", result.Length, 1, AudioSampleRate, false);
             clip.SetData(result.Span, 0);
             return clip;
+        }
+
+        protected abstract Awaitable<IReadOnlyCollection<OrtValue>> PreProcessAsync(string input, CancellationToken cancellationToken);
+
+        protected virtual ReadOnlyMemory<float> PostProcess(IReadOnlyList<OrtValue> outputs)
+        {
+            Assert.IsTrue(outputs.Count == 1, $"Expected 1 output, but got {outputs.Count}");
+
+            var tmpBuffer = outputs[0].GetTensorDataAsSpan<float>();
+            int length = tmpBuffer.Length;
+
+            EnsureBufferSize(ref outputAudioBuffer, length);
+            var memory = new Memory<float>(outputAudioBuffer, 0, length);
+            tmpBuffer.CopyTo(memory.Span);
+
+            return memory;
+        }
+
+        static protected void EnsureBufferSize<T>(ref T[] buffer, int length)
+        {
+            Assert.IsNotNull(buffer);
+            if (buffer.Length < length)
+            {
+                ArrayPool<T>.Shared.Return(buffer);
+                buffer = ArrayPool<T>.Shared.Rent(length);
+            }
         }
     }
 }

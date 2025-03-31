@@ -448,7 +448,8 @@ MonoBehaviour:
   options:
     executionProvider:
       executionProviderPriorities: 00000000
-  voiceList:
+    language: 0
+  allVoices:
   - af
   - af_alloy
   - af_aoede

@@ -25,7 +25,7 @@ sealed class KokoroTTSDemo : MonoBehaviour
 
     [SerializeField]
     [ContextMenuItem("Update Voice List", nameof(UpdateVoiceList))]
-    string[] voiceList;
+    string[] allVoices;
 
     [SerializeField]
     string speechText = "Life is like a box of chocolates. You never know what you're gonna get.";
@@ -39,6 +39,7 @@ sealed class KokoroTTSDemo : MonoBehaviour
 
     async void Start()
     {
+        Application.runInBackground = true;
         audioSource = GetComponent<AudioSource>();
 
         // Setup Kokoro
@@ -55,15 +56,19 @@ sealed class KokoroTTSDemo : MonoBehaviour
         var uiDocument = GetComponent<UIDocument>();
         var root = uiDocument.rootVisualElement;
 
+        // Filter voice list to only supported language
         var voicesDropdown = root.Q<DropdownField>("VoicesDropdown");
-        voicesDropdown.choices = voiceList.ToList();
+        char selectedLangPrefix = KokoroTTS.GetLanguagePrefix(options.language);
+        voicesDropdown.choices = allVoices
+            .Where(voice => voice[0] == selectedLangPrefix)
+            .ToList();
         voicesDropdown.RegisterValueChangedCallback(async evt =>
         {
             int index = voicesDropdown.index;
             await LoadVoiceAsync(index);
-            Debug.Log($"Selected voice: {voiceList[index]}");
+            Debug.Log($"Selected voice: {allVoices[index]}");
         });
-        voicesDropdown.index = 1;
+        voicesDropdown.index = 0;
 
         var ttsTextField = root.Q<TextField>("TtsTextField");
         ttsTextField.value = speechText;
@@ -82,7 +87,7 @@ sealed class KokoroTTSDemo : MonoBehaviour
 
     async Awaitable LoadVoiceAsync(int index)
     {
-        string url = "file://" + Path.Combine(Application.streamingAssetsPath, "Voices", $"{voiceList[index]}.bin");
+        string url = "file://" + Path.Combine(Application.streamingAssetsPath, "Voices", $"{allVoices[index]}.bin");
         await tts.LoadVoiceAsync(new Uri(url), destroyCancellationToken);
     }
 
@@ -111,10 +116,10 @@ sealed class KokoroTTSDemo : MonoBehaviour
         if (!Directory.Exists(dir))
         {
             Debug.LogWarning($"Voice directory does not exist: {dir}");
-            voiceList = Array.Empty<string>();
+            allVoices = Array.Empty<string>();
             return;
         }
-        voiceList = Directory.GetFiles(dir, "*.bin")
+        allVoices = Directory.GetFiles(dir, "*.bin")
             .Select(path => Path.GetFileNameWithoutExtension(path))
             .ToArray();
     }
