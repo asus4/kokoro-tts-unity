@@ -121,6 +121,11 @@ def make_test_json(test_data, g2p, jsonFilePath):
 
 g2pA = en.G2P(trf=False, british=False, fallback=None)
 g2pB = en.G2P(trf=False, british=True, fallback=None)
-make_test_json(A_TEST_CASES, g2pA, "../Tests/Data/american_test_data.json")
-make_test_json(B_TEST_CASES, g2pB, "../Tests/Data/british_test_data.json")
+
+testDataDir = "../com.github.asus4.kokoro-tts/Tests/Data"
+pathA = f"{testDataDir}/american_test_data.json"
+pathB = f"{testDataDir}/british_test_data.json"
+
+make_test_json(A_TEST_CASES, g2pA, pathA)
+make_test_json(B_TEST_CASES, g2pB, pathB)
 print("Finished generating test data.")
