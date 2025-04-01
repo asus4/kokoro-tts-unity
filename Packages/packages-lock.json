@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.github.asus4.espeak-ng": {
+      "version": "file:com.github.asus4.espeak-ng",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.github.asus4.kokoro-tts": {
       "version": "file:com.github.asus4.kokoro-tts",
       "depth": 0,
