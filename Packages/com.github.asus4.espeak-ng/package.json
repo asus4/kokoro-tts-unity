@@ -9,6 +9,9 @@
   ],
   "unity": "2022.3",
   "unityRelease": "0f1",
+  "dependencies": {
+    "com.unity.sharp-zip-lib": "1.3.9"
+  },
   "repository": {
     "type": "git",
     "repository": "https://github.com/asus4/espeak-ng-unity.git"

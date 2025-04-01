@@ -27,6 +27,38 @@ namespace ESpeakNg
         espeakINITIALIZE_DONT_EXIT = 0x8000,
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct espeak_VOICE
+    {
+        /// <summary>A given name for this voice. UTF8 string.</summary>
+        [MarshalAs(UnmanagedType.LPUTF8Str)]
+        public string name;
+
+        /// <summary>List of pairs of (byte) priority + (string) language (and dialect qualifier)</summary>
+        [MarshalAs(UnmanagedType.LPUTF8Str)]
+        public string languages;
+
+        /// <summary>The filename for this voice within espeak-ng-data/voices</summary>
+        [MarshalAs(UnmanagedType.LPUTF8Str)]
+        public string identifier;
+
+        /// <summary>0=none 1=male, 2=female</summary>
+        public byte gender;
+
+        /// <summary>0=not specified, or age in years</summary>
+        public byte age;
+
+        /// <summary>Only used when passed as a parameter to espeak_SetVoiceByProperties</summary>
+        public byte variant;
+        /// <summary>For internal use</summary>
+        public byte xx1;
+        /// <summary>For internal use</summary>
+        public int score;
+        /// <summary>For internal use</summary>
+        public IntPtr spare;
+    }
+
+
     public enum espeakCHARS
     {
         espeakCHARS_AUTO = 0,
@@ -52,14 +84,17 @@ namespace ESpeakNg
         [DllImport(NativeLib.DllName)]
         internal static extern unsafe void espeak_ng_InitializePath(byte* path);
 
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
-        internal static extern unsafe int espeak_Initialize(espeak_AUDIO_OUTPUT output, int buflength, char* path, int options);
+        [DllImport(NativeLib.DllName)]
+        internal static extern unsafe int espeak_Initialize(espeak_AUDIO_OUTPUT output, int buflength, byte* path, int options);
 
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         internal static extern unsafe espeak_ERROR espeak_SetVoiceByFile(char* filename);
 
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
-        internal static extern unsafe espeak_ERROR espeak_SetVoiceByName(char* name);
+        [DllImport(NativeLib.DllName)]
+        internal static extern unsafe espeak_ERROR espeak_SetVoiceByName(byte* name);
+
+        [DllImport(NativeLib.DllName)]
+        internal static extern espeak_ERROR espeak_SetVoiceByProperties(IntPtr /* espeak_VOICE */ voice_spec);
 
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         internal static extern unsafe char* espeak_TextToPhonemes(void** text, int textmode, int phonememode);

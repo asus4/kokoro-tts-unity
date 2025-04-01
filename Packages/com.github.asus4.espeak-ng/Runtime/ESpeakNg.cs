@@ -14,8 +14,8 @@ namespace ESpeakNg
                 throw new ArgumentException($"Path length exceeds 160 characters: {path}");
             }
 
-            byte[] pathBytes = Encoding.UTF8.GetBytes(path);
-            fixed (byte* pathPtr = pathBytes)
+            byte[] pathUtf8 = Encoding.UTF8.GetBytes(path);
+            fixed (byte* pathPtr = pathUtf8)
             {
                 NativeMethods.espeak_ng_InitializePath(pathPtr);
             }
@@ -23,13 +23,14 @@ namespace ESpeakNg
 
         public unsafe static int Initialize(string path, espeakINITIALIZE options)
         {
-            fixed (char* pathPtr = path)
+            byte[] pathUtf8 = Encoding.UTF8.GetBytes(path);
+            fixed (byte* pathPtr = pathUtf8)
             {
                 return NativeMethods.espeak_Initialize(
                     espeak_AUDIO_OUTPUT.AUDIO_OUTPUT_RETRIEVAL,
                     0,
                     pathPtr,
-                   (int)options);
+                    (int)options);
             }
         }
 
@@ -46,6 +47,42 @@ namespace ESpeakNg
             return (version, dataPath);
         }
 
+        public static espeak_ERROR SetVoiceByProperties(espeak_VOICE voice)
+        {
+            IntPtr voicePtr = Marshal.AllocHGlobal(Marshal.SizeOf(voice));
+            try
+            {
+                Marshal.StructureToPtr(voice, voicePtr, false);
+                return NativeMethods.espeak_SetVoiceByProperties(voicePtr);
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogError($"Failed to set voice properties: {e.Message}");
+                return espeak_ERROR.EE_INTERNAL_ERROR;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(voicePtr);
+            }
+        }
+
+        public static espeak_ERROR SetLanguage(string language)
+        {
+            var voice = new espeak_VOICE()
+            {
+                name = null,
+                languages = language,
+                identifier = null,
+                gender = 0,
+                age = 0,
+                variant = 0,
+                xx1 = 0,
+                score = 0,
+                spare = IntPtr.Zero
+            };
+            return SetVoiceByProperties(voice);
+        }
+
         public unsafe static espeak_ERROR SetVoiceByFile(string filename)
         {
             fixed (char* filenamePtr = filename)
@@ -56,28 +93,31 @@ namespace ESpeakNg
 
         public unsafe static espeak_ERROR SetVoiceByName(string name)
         {
-            fixed (char* namePtr = name)
+            byte[] nameUtf8 = Encoding.UTF8.GetBytes(name);
+            fixed (byte* namePtr = nameUtf8)
             {
                 return NativeMethods.espeak_SetVoiceByName(namePtr);
             }
         }
 
-        public unsafe static string TextToPhonemes(string text, int phonememode = 0)
+        public unsafe static string TextToPhonemes(string text, int phonemeMode = 0)
         {
-            // Encode UTF-16 to UTF-8
-            espeakCHARS textmode = espeakCHARS.espeakCHARS_UTF8;
-            byte[] utf8text = Encoding.UTF8.GetBytes(text);
+            espeakCHARS textMode = espeakCHARS.espeakCHARS_UTF8;
 
+            // Convert C# string to UTF-8 with null-terminator
+            byte[] textUtf8 = Encoding.UTF8.GetBytes(text);
+            byte[] utf8TextWithTerminator = new byte[textUtf8.Length + 1];
+            textUtf8.AsSpan().CopyTo(utf8TextWithTerminator);
+            utf8TextWithTerminator[textUtf8.Length] = 0; // Null-terminate the string
 
-            fixed (byte* utf8textPtr = utf8text)
+            fixed (void* utf8textPtr = utf8TextWithTerminator)
             {
-                void* textPtr = (void*)utf8textPtr;
-                IntPtr phonemesPtr = (IntPtr)NativeMethods.espeak_TextToPhonemes(&textPtr, (int)textmode, phonememode);
+                IntPtr phonemesPtr = (IntPtr)NativeMethods.espeak_TextToPhonemes(&utf8textPtr, (int)textMode, phonemeMode);
                 if (phonemesPtr == IntPtr.Zero)
                 {
-                    return null;
+                    return string.Empty;
                 }
-                return Marshal.PtrToStringAnsi(phonemesPtr);
+                return Marshal.PtrToStringAuto(phonemesPtr);
             }
         }
 
