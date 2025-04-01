@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -100,25 +101,49 @@ namespace ESpeakNg
             }
         }
 
-        public unsafe static string TextToPhonemes(string text, int phonemeMode = 0)
+        public unsafe static IReadOnlyList<string> TextToPhonemes(string text, int phonemeMode = 0x10)
         {
-            espeakCHARS textMode = espeakCHARS.espeakCHARS_UTF8;
+            const espeakCHARS textMode = espeakCHARS.espeakCHARS_UTF8;
 
             // Convert C# string to UTF-8 with null-terminator
             byte[] textUtf8 = Encoding.UTF8.GetBytes(text);
+            // Null-terminate the string
             byte[] utf8TextWithTerminator = new byte[textUtf8.Length + 1];
             textUtf8.AsSpan().CopyTo(utf8TextWithTerminator);
-            utf8TextWithTerminator[textUtf8.Length] = 0; // Null-terminate the string
+            utf8TextWithTerminator[textUtf8.Length] = 0;
+
+            int loopCount = 0;
+            var results = new List<string>();
 
             fixed (void* utf8textPtr = utf8TextWithTerminator)
             {
-                IntPtr phonemesPtr = (IntPtr)NativeMethods.espeak_TextToPhonemes(&utf8textPtr, (int)textMode, phonemeMode);
-                if (phonemesPtr == IntPtr.Zero)
+                while (true)
                 {
-                    return string.Empty;
+                    IntPtr phonemesPtr = (IntPtr)NativeMethods.espeak_TextToPhonemes(
+                        &utf8textPtr,
+                        (int)textMode,
+                        phonemeMode);
+                    if (phonemesPtr == IntPtr.Zero)
+                    {
+                        break;
+                    }
+                    string result = Marshal.PtrToStringUTF8(phonemesPtr);
+                    if (string.IsNullOrEmpty(result))
+                    {
+                        continue;
+                    }
+                    results.Add(result);
+
+                    // Fail-safe check to prevent infinite loop
+                    if (loopCount++ >= text.Length)
+                    {
+                        UnityEngine.Debug.LogWarning("TextToPhonemes loop count exceeded, breaking to prevent infinite loop.");
+                        break;
+                    }
                 }
-                return Marshal.PtrToStringAuto(phonemesPtr);
             }
+
+            return results;
         }
 
         public static espeak_ERROR Terminate()

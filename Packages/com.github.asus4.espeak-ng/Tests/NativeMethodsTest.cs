@@ -18,7 +18,11 @@ namespace ESpeakNg.Tests
 
             // ESpeak.InitializePath(dataPath);
 
-            var options = espeakINITIALIZE.espeakINITIALIZE_PHONEME_IPA | espeakINITIALIZE.espeakINITIALIZE_DONT_EXIT;
+            var options
+                // = espeakINITIALIZE.espeakINITIALIZE_PHONEME_EVENTS
+                = espeakINITIALIZE.espeakINITIALIZE_PHONEME_IPA
+                // | espeakINITIALIZE.espeakPHONEMES_TIE
+                | espeakINITIALIZE.espeakINITIALIZE_DONT_EXIT;
             int Hz = ESpeak.Initialize(dataPath, options);
             Debug.Log($"espeak-ng initialized with Hz: {Hz}");
         }
@@ -58,15 +62,24 @@ namespace ESpeakNg.Tests
             }
         }
 
-        [TestCase("Hello World", "aaaa", "en-us")]
-        [TestCase("こんにちは 世界", "aaaa", "ja")]
-        public void TextToPhonemesTest(string input, string expected, string language)
+
+        // https://github.com/xenova/phonemizer.js/blob/main/tests/phonemize.test.js
+        [TestCase("en-gb", "Hello, world!", "həlˈə‍ʊ", "wˈɜːld")]
+        [TestCase("en-gb", "hi and bye", "hˈa‍ɪ and bˈa‍ɪ")]
+        [TestCase("en-gb", "Hi. Bye.", "hˈa‍ɪ", "bˈa‍ɪ")]
+        [TestCase("ja", "あいうえお", "aaaa")]
+        public void TextToPhonemesTest(string language, string input, params string[] expected)
         {
             espeak_ERROR result = ESpeak.SetLanguage(language);
             Assert.AreEqual(espeak_ERROR.EE_OK, result, $"Failed to set language: {result}");
 
-            string phonemes = ESpeak.TextToPhonemes(input, 1);
-            Assert.AreEqual(expected, phonemes);
+            var phonemes = ESpeak.TextToPhonemes(input, 3);
+
+            Assert.AreEqual(expected.Length, phonemes.Count, $"Phoneme count mismatch for input: {input}");
+            for (int i = 0; i < expected.Length; i++)
+            {
+                Assert.AreEqual(expected[i], phonemes[i], $"Phoneme mismatch at index {i} for input: {input}");
+            }
         }
     }
 }

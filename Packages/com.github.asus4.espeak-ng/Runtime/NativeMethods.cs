@@ -24,6 +24,7 @@ namespace ESpeakNg
     {
         espeakINITIALIZE_PHONEME_EVENTS = 0x0001,
         espeakINITIALIZE_PHONEME_IPA = 0x0002,
+        espeakPHONEMES_TIE = 0x0080,
         espeakINITIALIZE_DONT_EXIT = 0x8000,
     }
 
@@ -96,8 +97,11 @@ namespace ESpeakNg
         [DllImport(NativeLib.DllName)]
         internal static extern espeak_ERROR espeak_SetVoiceByProperties(IntPtr /* espeak_VOICE */ voice_spec);
 
-        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
-        internal static extern unsafe char* espeak_TextToPhonemes(void** text, int textmode, int phonememode);
+        [DllImport(NativeLib.DllName)]
+        internal static extern unsafe void* espeak_TextToPhonemes(void** text, int textmode, int phonememode);
+
+        [DllImport(NativeLib.DllName)]
+        internal static extern unsafe void* espeak_TextToPhonemesWithTerminator(void** textptr, int textmode, int phonememode, int* terminator);
 
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         internal static extern espeak_ERROR espeak_Terminate();
