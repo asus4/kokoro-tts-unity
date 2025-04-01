@@ -7,20 +7,7 @@ namespace ESpeakNg
 {
     public static class ESpeak
     {
-
-        public unsafe static void InitializePath(string path)
-        {
-            if (path.Length > 160)
-            {
-                throw new ArgumentException($"Path length exceeds 160 characters: {path}");
-            }
-
-            byte[] pathUtf8 = Encoding.UTF8.GetBytes(path);
-            fixed (byte* pathPtr = pathUtf8)
-            {
-                NativeMethods.espeak_ng_InitializePath(pathPtr);
-            }
-        }
+        #region Methods in speak_lib.h
 
         public unsafe static int Initialize(string path, espeakINITIALIZE options)
         {
@@ -150,5 +137,38 @@ namespace ESpeakNg
         {
             return NativeMethods.espeak_Terminate();
         }
+        #endregion // Methods in speak_lib.ho
+
+        #region Methods in espeak_ng.h
+
+        public unsafe static void InitializePath(string path)
+        {
+            if (path.Length > 160)
+            {
+                throw new ArgumentException($"Path length exceeds 160 characters: {path}");
+            }
+
+            byte[] pathUtf8 = Encoding.UTF8.GetBytes(path);
+            fixed (byte* pathPtr = pathUtf8)
+            {
+                NativeMethods.espeak_ng_InitializePath(pathPtr);
+            }
+        }
+
+        public unsafe static espeak_ng_STATUS InitializeOutput(espeak_ng_OUTPUT_MODE outputMode, int bufferLength, string device)
+        {
+            if (string.IsNullOrWhiteSpace(device))
+            {
+                return NativeMethods.espeak_ng_InitializeOutput(outputMode, 0, null);
+            }
+
+            byte[] deviceUtf8 = Encoding.UTF8.GetBytes(device);
+            fixed (byte* devicePtr = deviceUtf8)
+            {
+                return NativeMethods.espeak_ng_InitializeOutput(outputMode, bufferLength, devicePtr);
+            }
+        }
+
+        #endregion // Methods in espeak_ng.h
     }
 }

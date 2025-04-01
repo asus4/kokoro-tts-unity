@@ -7,7 +7,7 @@ namespace ESpeakNg.Tests
 {
 
     [TestFixture]
-    public class NativeMethodsTest
+    public class PhonemesTest
     {
         [SetUp]
         public void Setup()
@@ -25,6 +25,9 @@ namespace ESpeakNg.Tests
                 | espeakINITIALIZE.espeakINITIALIZE_DONT_EXIT;
             int Hz = ESpeak.Initialize(dataPath, options);
             Debug.Log($"espeak-ng initialized with Hz: {Hz}");
+
+            var result = ESpeak.InitializeOutput(espeak_ng_OUTPUT_MODE.ENOUTPUT_MODE_SYNCHRONOUS, 0, null);
+            Assert.AreEqual(espeak_ng_STATUS.ENS_OK, result, $"Failed to initialize output: {result}");
         }
 
         [TearDown]
