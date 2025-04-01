@@ -9,9 +9,15 @@ namespace ESpeakNg
 
         public unsafe static void InitializePath(string path)
         {
-            fixed (char* pathPtr = path)
+            if (path.Length > 160)
             {
-                NativeMethods.espeak_ng_InitializePath((IntPtr)pathPtr);
+                throw new ArgumentException($"Path length exceeds 160 characters: {path}");
+            }
+
+            byte[] pathBytes = Encoding.UTF8.GetBytes(path);
+            fixed (byte* pathPtr = pathBytes)
+            {
+                NativeMethods.espeak_ng_InitializePath(pathPtr);
             }
         }
 
@@ -27,17 +33,17 @@ namespace ESpeakNg
             }
         }
 
-        public unsafe static string GetInfo(out string path)
+        public unsafe static (string version, string dataPath) GetInfo()
         {
-            IntPtr pathPtr;
-            IntPtr versionPrt = (IntPtr)NativeMethods.espeak_Info(&pathPtr);
-            if (versionPrt == IntPtr.Zero || pathPtr == IntPtr.Zero)
+            IntPtr dataPathPtr;
+            IntPtr versionPtr = (IntPtr)NativeMethods.espeak_Info(&dataPathPtr);
+            if (versionPtr == IntPtr.Zero || dataPathPtr == IntPtr.Zero)
             {
-                path = null;
-                return null;
+                return (string.Empty, string.Empty);
             }
-            path = Marshal.PtrToStringAnsi(pathPtr);
-            return Marshal.PtrToStringAnsi(versionPrt);
+            string dataPath = Marshal.PtrToStringAuto(dataPathPtr);
+            string version = Marshal.PtrToStringAuto(versionPtr);
+            return (version, dataPath);
         }
 
         public unsafe static espeak_ERROR SetVoiceByFile(string filename)

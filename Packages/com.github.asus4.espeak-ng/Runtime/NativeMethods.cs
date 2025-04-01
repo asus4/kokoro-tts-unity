@@ -38,34 +38,36 @@ namespace ESpeakNg
 
     internal static class NativeMethods
     {
-
+        internal class NativeLib
+        {
 #if UNITY_ANDROID && !UNITY_EDITOR
-        internal const string DllName = "libespeak-ng.so";
+            internal const string DllName = "libespeak-ng.so";
 #elif UNITY_IOS && !UNITY_EDITOR
-        internal const string DllName = "__Internal";
+            internal const string DllName = "__Internal";
 #else
-        internal const string DllName = "espeak-ng";
+            internal const string DllName = "espeak-ng";
 #endif
+        }
 
-        [DllImport(DllName, CharSet = CharSet.Ansi)]
-        internal static extern unsafe void espeak_ng_InitializePath(IntPtr path);
+        [DllImport(NativeLib.DllName)]
+        internal static extern unsafe void espeak_ng_InitializePath(byte* path);
 
-        [DllImport(DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         internal static extern unsafe int espeak_Initialize(espeak_AUDIO_OUTPUT output, int buflength, char* path, int options);
 
-        [DllImport(DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         internal static extern unsafe espeak_ERROR espeak_SetVoiceByFile(char* filename);
 
-        [DllImport(DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         internal static extern unsafe espeak_ERROR espeak_SetVoiceByName(char* name);
 
-        [DllImport(DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         internal static extern unsafe char* espeak_TextToPhonemes(void** text, int textmode, int phonememode);
 
-        [DllImport(DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         internal static extern espeak_ERROR espeak_Terminate();
 
-        [DllImport(DllName, CharSet = CharSet.Ansi)]
+        [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         internal static extern unsafe char* espeak_Info(IntPtr* path_data);
     }
 }
