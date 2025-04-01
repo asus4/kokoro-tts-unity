@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
+using System.Text;
 
 namespace ESpeakNg.Tests
 {
@@ -21,7 +23,6 @@ namespace ESpeakNg.Tests
             var options
                 // = espeakINITIALIZE.espeakINITIALIZE_PHONEME_EVENTS
                 = espeakINITIALIZE.espeakINITIALIZE_PHONEME_IPA
-                // | espeakINITIALIZE.espeakPHONEMES_TIE
                 | espeakINITIALIZE.espeakINITIALIZE_DONT_EXIT;
             int Hz = ESpeak.Initialize(dataPath, options);
             Debug.Log($"espeak-ng initialized with Hz: {Hz}");
@@ -70,18 +71,25 @@ namespace ESpeakNg.Tests
         [TestCase("en-gb", "Hello, world!", "həlˈə‍ʊ", "wˈɜːld")]
         [TestCase("en-gb", "hi and bye", "hˈa‍ɪ and bˈa‍ɪ")]
         [TestCase("en-gb", "Hi. Bye.", "hˈa‍ɪ", "bˈa‍ɪ")]
-        [TestCase("ja", "あいうえお", "aaaa")]
+        [TestCase("ja", "あいうえお", "ˌäiɯ‍ᵝˈe̞o")]
         public void TextToPhonemesTest(string language, string input, params string[] expected)
         {
             espeak_ERROR result = ESpeak.SetLanguage(language);
             Assert.AreEqual(espeak_ERROR.EE_OK, result, $"Failed to set language: {result}");
 
-            var phonemes = ESpeak.TextToPhonemes(input, 3);
+            const espeakPhonemesOptions options = ESpeak.DefaultPhonemeOptions;
+            const int separator = ESpeak.DefaultPhonemesSeparator;
+            const char separatorChar = '\u200d';
+            var phonemes = ESpeak.TextToPhonemes(input, options, separator);
 
-            Assert.AreEqual(expected.Length, phonemes.Count, $"Phoneme count mismatch for input: {input}");
+            Assert.AreEqual(expected.Length, phonemes.Count,
+                $"phonemes {string.Join(" - ", phonemes)} length mismatch for input: {input}");
+
             for (int i = 0; i < expected.Length; i++)
             {
-                Assert.AreEqual(expected[i], phonemes[i], $"Phoneme mismatch at index {i} for input: {input}");
+                string a = expected[i].Replace($"{separatorChar}", "");
+                string b = phonemes[i].Replace($"{separatorChar}", "");
+                Assert.AreEqual(a, b, $"{i}: Phoneme: {b} should be: {a}");
             }
         }
     }

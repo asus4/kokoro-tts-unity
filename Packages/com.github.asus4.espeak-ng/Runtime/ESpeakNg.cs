@@ -88,7 +88,14 @@ namespace ESpeakNg
             }
         }
 
-        public unsafe static IReadOnlyList<string> TextToPhonemes(string text, int phonemeMode = 0x10)
+        public const espeakPhonemesOptions DefaultPhonemeOptions = espeakPhonemesOptions.espeakPHONEMES_IPA | espeakPhonemesOptions.espeakPHONEMES_TIE;
+        /// <summary>U+200D ZERO WIDTH JOINER</summary>
+        public const int DefaultPhonemesSeparator = 0x200d;
+
+        public unsafe static IReadOnlyList<string> TextToPhonemes(
+            string text,
+            espeakPhonemesOptions phonemeOptions = DefaultPhonemeOptions,
+            int phonemesSeparator = DefaultPhonemesSeparator)
         {
             const espeakCHARS textMode = espeakCHARS.espeakCHARS_UTF8;
 
@@ -101,6 +108,14 @@ namespace ESpeakNg
 
             int loopCount = 0;
             var results = new List<string>();
+
+            /*
+            phoneme_mode
+            bit 1:   0=eSpeak's ascii phoneme names, 1= International Phonetic Alphabet (as UTF-8 characters).
+            bit 7:   use (bits 8-23) as a tie within multi-letter phonemes names
+            bits 8-23:  separator character, between phoneme names
+            */
+            int phonemeMode = ((int)phonemeOptions) | (phonemesSeparator << 8);
 
             fixed (void* utf8textPtr = utf8TextWithTerminator)
             {
@@ -115,11 +130,13 @@ namespace ESpeakNg
                         break;
                     }
                     string result = Marshal.PtrToStringUTF8(phonemesPtr);
+
                     if (string.IsNullOrEmpty(result))
                     {
-                        continue;
+                        break;
                     }
                     results.Add(result);
+                    // break;
 
                     // Fail-safe check to prevent infinite loop
                     if (loopCount++ >= text.Length)
@@ -137,6 +154,7 @@ namespace ESpeakNg
         {
             return NativeMethods.espeak_Terminate();
         }
+
         #endregion // Methods in speak_lib.ho
 
         #region Methods in espeak_ng.h

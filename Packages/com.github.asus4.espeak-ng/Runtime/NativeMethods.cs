@@ -24,8 +24,18 @@ namespace ESpeakNg
     {
         espeakINITIALIZE_PHONEME_EVENTS = 0x0001,
         espeakINITIALIZE_PHONEME_IPA = 0x0002,
-        espeakPHONEMES_TIE = 0x0080,
         espeakINITIALIZE_DONT_EXIT = 0x8000,
+    }
+
+
+    [Flags]
+    public enum espeakPhonemesOptions
+    {
+        espeakPHONEMES_SHOW = 0x01,
+        espeakPHONEMES_IPA = 0x02,
+        espeakPHONEMES_TRACE = 0x08,
+        espeakPHONEMES_MBROLA = 0x10,
+        espeakPHONEMES_TIE = 0x80,
     }
 
     public enum espeak_ng_STATUS
