@@ -1,0 +1,21 @@
+{
+    "name": "eSpeakNg.Tests",
+    "rootNamespace": "ESpeakNg.Tests",
+    "references": [
+        "GUID:5c0810024e306495ca238b09dc6f357f"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

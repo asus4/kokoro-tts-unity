@@ -1,0 +1,23 @@
+{
+  "name": "com.github.asus4.espeak-ng",
+  "version": "0.3.2",
+  "displayName": "eSpeak NG",
+  "description": "eSpeak NG Plugin for Unity",
+  "keywords": [
+    "unity",
+    "tts"
+  ],
+  "unity": "2022.3",
+  "unityRelease": "0f1",
+  "repository": {
+    "type": "git",
+    "repository": "https://github.com/asus4/espeak-ng-unity.git"
+  },
+  "documentationUrl": "https://github.com/asus4/espeak-ng-unity",
+  "changelogUrl": "https://github.com/asus4/espeak-ng-unity/releases",
+  "licensesUrl": "https://github.com/asus4/espeak-ng-unity/LICENSE",
+  "author": {
+    "name": "Koki Ibukuro",
+    "url": "https://github.com/asus4"
+  }
+}
