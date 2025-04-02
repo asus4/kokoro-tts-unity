@@ -71,7 +71,7 @@ namespace ESpeakNg.Tests
         [TestCase("en-gb", "Hello, world!", "həlˈə‍ʊ", "wˈɜːld")]
         [TestCase("en-gb", "hi and bye", "hˈa‍ɪ and bˈa‍ɪ")]
         [TestCase("en-gb", "Hi. Bye.", "hˈa‍ɪ", "bˈa‍ɪ")]
-        [TestCase("ja", "あいうえお", "ˌäiɯ‍ᵝˈe̞o")]
+        [TestCase("ja", "あいうえお", "ˌäiɯ‍ᵝˈe̞o̞")]
         public void TextToPhonemesTest(string language, string input, params string[] expected)
         {
             espeak_ERROR result = ESpeak.SetLanguage(language);
@@ -89,8 +89,13 @@ namespace ESpeakNg.Tests
             {
                 string a = expected[i].Replace($"{separatorChar}", "");
                 string b = phonemes[i].Replace($"{separatorChar}", "");
-                Assert.AreEqual(a, b, $"{i}: Phoneme: {b} should be: {a}");
+                Assert.AreEqual(a, b, $"{i}: Phoneme: {ToUnicode(b)} should be: {ToUnicode(a)}");
             }
+        }
+
+        static string ToUnicode(string str)
+        {
+            return string.Join("", str.Select(c => $"\\u{(int)c:X4}"));
         }
     }
 }
