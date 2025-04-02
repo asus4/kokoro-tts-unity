@@ -16,7 +16,7 @@ namespace Kokoro.Misaki
         public bool FutureTo { get; set; } = false;
     }
 
-    public partial class EnglishG2P : IG2P
+    public partial class EnglishG2P
     {
         static readonly HashSet<char> DIPHTHONGS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'ʤ', 'ʧ' };
         static readonly HashSet<char> VOWELS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'a', 'i', 'u', 'æ', 'ɑ', 'ɒ', 'ɔ', 'ə', 'ɛ', 'ɜ', 'ɪ', 'ʊ', 'ʌ', 'ᵻ' };
@@ -48,8 +48,10 @@ namespace Kokoro.Misaki
         }
 
         // Implementation of IG2P.Convert
-        public string Convert(string text)
+        public string Convert(ReadOnlySpan<char> textSpan)
         {
+            string text = textSpan.ToString();
+
             // 1. Preprocess the text
             var (preprocessedText, rawTokens, features) = Preprocess(text);
 

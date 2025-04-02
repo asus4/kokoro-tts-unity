@@ -13,12 +13,6 @@ using UnityEngine.Networking;
 
 namespace Kokoro
 {
-    public enum LanguageCode
-    {
-        En_US,
-        En_GB,
-        // TODO: support more languages
-    }
 
     /// <summary>
     /// Kokoro TTS
@@ -42,7 +36,7 @@ namespace Kokoro
         long[] inputTokensBuffer;
         float[] voiceStyleBuffer;
         Memory<float> voiceStyle;
-        IG2P g2p;
+        public IG2P G2P { get; private set; }
 
         public float Speed { get; set; } = 1.0f;
         protected override int AudioSampleRate => 24000;
@@ -63,14 +57,13 @@ namespace Kokoro
             inputs.Add(meta["style"].CreateTensorOrtValue());
             inputs.Add(meta["speed"].CreateTensorOrtValue());
 
-            // Only supports English for now
-            g2p = new EnglishG2P(options.language);
+            G2P = new ESpeakG2P();
         }
 
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
-            g2p?.Dispose();
+            G2P?.Dispose();
 
             foreach (var input in inputs)
             {
@@ -123,6 +116,11 @@ namespace Kokoro
 
         void PreProcess(ReadOnlySpan<long> tokens)
         {
+            if (voiceStyle.IsEmpty)
+            {
+                throw new InvalidOperationException("Voice is not loaded. Call LoadVoiceAsync() first.");
+            }
+
             Assert.IsTrue(tokens.Length < 510, $"Input too long: {tokens.Length} tokens");
 
             // [0]: Set input tokens
