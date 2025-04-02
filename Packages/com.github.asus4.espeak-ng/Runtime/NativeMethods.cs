@@ -140,10 +140,10 @@ namespace ESpeakNg
         internal static extern espeak_ERROR espeak_SetVoiceByProperties(IntPtr /* espeak_VOICE */ voice_spec);
 
         [DllImport(NativeLib.DllName)]
-        internal static extern unsafe void* espeak_TextToPhonemes(void** text, int textmode, int phonememode);
+        internal static extern unsafe void* espeak_TextToPhonemes(void** utf8Text, int textMode, int phonemeMode);
 
         [DllImport(NativeLib.DllName)]
-        internal static extern unsafe void* espeak_TextToPhonemesWithTerminator(void** textptr, int textmode, int phonememode, int* terminator);
+        internal static extern unsafe void* espeak_TextToPhonemesWithTerminator(void** textPtr, int textMode, int phonemeMode, int* terminator);
 
         [DllImport(NativeLib.DllName, CharSet = CharSet.Ansi)]
         internal static extern espeak_ERROR espeak_Terminate();

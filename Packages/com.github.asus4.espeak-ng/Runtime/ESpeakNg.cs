@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -93,18 +94,17 @@ namespace ESpeakNg
         public const int DefaultPhonemesSeparator = 0x200d;
 
         public unsafe static IReadOnlyList<string> TextToPhonemes(
-            string text,
+            ReadOnlySpan<char> text,
             espeakPhonemesOptions phonemeOptions = DefaultPhonemeOptions,
             int phonemesSeparator = DefaultPhonemesSeparator)
         {
-            const espeakCHARS textMode = espeakCHARS.espeakCHARS_UTF8;
+            const int textMode = (int)espeakCHARS.espeakCHARS_UTF8;
 
-            // Convert C# string to UTF-8 with null-terminator
-            byte[] textUtf8 = Encoding.UTF8.GetBytes(text);
-            // Null-terminate the string
-            byte[] utf8TextWithTerminator = new byte[textUtf8.Length + 1];
-            textUtf8.AsSpan().CopyTo(utf8TextWithTerminator);
-            utf8TextWithTerminator[textUtf8.Length] = 0;
+            // Convert C# string to UTF-8 with null-terminator (0)
+            int requiredBytes = Encoding.UTF8.GetByteCount(text);
+            byte[] utf8Buffer = ArrayPool<byte>.Shared.Rent(requiredBytes + 1);
+            utf8Buffer.AsSpan().Fill(0);
+            Encoding.UTF8.GetBytes(text, utf8Buffer.AsSpan(0, requiredBytes));
 
             int loopCount = 0;
             var results = new List<string>();
@@ -117,36 +117,33 @@ namespace ESpeakNg
             */
             int phonemeMode = ((int)phonemeOptions) | (phonemesSeparator << 8);
 
-            fixed (void* utf8textPtr = utf8TextWithTerminator)
+            fixed (void* utf8BufferPtr = utf8Buffer)
             {
                 while (true)
                 {
                     IntPtr phonemesPtr = (IntPtr)NativeMethods.espeak_TextToPhonemes(
-                        &utf8textPtr,
-                        (int)textMode,
-                        phonemeMode);
+                        &utf8BufferPtr,
+                        textMode, phonemeMode);
                     if (phonemesPtr == IntPtr.Zero)
                     {
                         break;
                     }
-                    string result = Marshal.PtrToStringUTF8(phonemesPtr);
-
-                    if (string.IsNullOrEmpty(result))
+                    string phonemes = Marshal.PtrToStringUTF8(phonemesPtr);
+                    if (string.IsNullOrEmpty(phonemes))
                     {
                         break;
                     }
-                    results.Add(result);
-                    // break;
+                    results.Add(phonemes);
 
                     // Fail-safe check to prevent infinite loop
-                    if (loopCount++ >= text.Length)
+                    if (loopCount++ > text.Length)
                     {
-                        UnityEngine.Debug.LogWarning("TextToPhonemes loop count exceeded, breaking to prevent infinite loop.");
-                        break;
+                        throw new Exception($"TextToPhonemes loop count exceeded: {loopCount}");
                     }
                 }
             }
 
+            ArrayPool<byte>.Shared.Return(utf8Buffer);
             return results;
         }
 
