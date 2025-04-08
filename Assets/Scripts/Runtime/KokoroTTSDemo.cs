@@ -17,6 +17,8 @@ using UnityEngine.UIElements;
 [RequireComponent(typeof(UIDocument), typeof(AudioSource))]
 sealed class KokoroTTSDemo : MonoBehaviour
 {
+    // Check quantized model variations here:
+    // https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX#quantizations
     [SerializeField]
     RemoteFile modelUrl = new("https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/onnx/model_fp16.onnx");
 
