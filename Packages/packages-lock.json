@@ -23,20 +23,12 @@
       "source": "local",
       "dependencies": {}
     },
-    "com.github.asus4.onnxruntime-extensions": {
-      "version": "file:../../../onnxruntime-unity/com.github.asus4.onnxruntime-extensions",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.github.asus4.onnxruntime": "0.3.2"
-      }
-    },
     "com.github.asus4.onnxruntime.unity": {
       "version": "file:../../../onnxruntime-unity/com.github.asus4.onnxruntime.unity",
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.github.asus4.onnxruntime": "0.3.2"
+        "com.github.asus4.onnxruntime": "0.4.0"
       }
     },
     "com.unity.burst": {
@@ -69,7 +61,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
-      "version": "2.0.22",
+      "version": "2.0.23",
       "depth": 0,
       "source": "registry",
       "dependencies": {

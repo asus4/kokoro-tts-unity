@@ -16,7 +16,7 @@ namespace Kokoro.Misaki
         public bool FutureTo { get; set; } = false;
     }
 
-    public partial class EnglishG2P
+    public partial class EnglishG2P : IDisposable
     {
         static readonly HashSet<char> DIPHTHONGS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'ʤ', 'ʧ' };
         static readonly HashSet<char> VOWELS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'a', 'i', 'u', 'æ', 'ɑ', 'ɒ', 'ɔ', 'ə', 'ɛ', 'ɜ', 'ɪ', 'ʊ', 'ʌ', 'ᵻ' };

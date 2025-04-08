@@ -3,6 +3,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using Kokoro.Misaki;
 using Microsoft.ML.OnnxRuntime;
@@ -57,7 +58,8 @@ namespace Kokoro
             inputs.Add(meta["style"].CreateTensorOrtValue());
             inputs.Add(meta["speed"].CreateTensorOrtValue());
 
-            G2P = new ESpeakG2P();
+            string dataPath = Path.Combine(Application.dataPath, "..", "espeak-ng-data");
+            G2P = new ESpeakG2P(dataPath);
         }
 
         protected override void Dispose(bool disposing)
