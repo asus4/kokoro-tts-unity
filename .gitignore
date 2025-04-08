@@ -83,3 +83,5 @@ crashlytics-build.properties
 espeak-ng-data
 Assets/StreamingAssets/Voices/*.bin*
 Packages/com.github.asus4.espeak-ng/Plugins
+# NuGet for Unity
+Assets/Packages/
