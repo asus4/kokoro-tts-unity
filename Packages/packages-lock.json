@@ -1,12 +1,5 @@
 {
   "dependencies": {
-    "com.github-glitchenzo.nugetforunity": {
-      "version": "4.3.0",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://package.openupm.com"
-    },
     "com.github.asus4.espeak-ng": {
       "version": "file:com.github.asus4.espeak-ng",
       "depth": 0,

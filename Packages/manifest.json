@@ -6,13 +6,6 @@
       "scopes": [
         "com.github.asus4"
       ]
-    },
-    {
-      "name": "package.openupm.com",
-      "url": "https://package.openupm.com",
-      "scopes": [
-        "com.github-glitchenzo.nugetforunity"
-      ]
     }
   ],
   "dependencies": {
@@ -28,7 +21,6 @@
     "com.unity.modules.jsonserialize": "1.0.0",
     "com.unity.modules.ui": "1.0.0",
     "com.unity.modules.uielements": "1.0.0",
-    "com.unity.modules.unitywebrequest": "1.0.0",
-    "com.github-glitchenzo.nugetforunity": "4.3.0"
+    "com.unity.modules.unitywebrequest": "1.0.0"
   }
 }
