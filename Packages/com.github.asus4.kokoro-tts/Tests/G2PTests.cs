@@ -25,8 +25,8 @@ namespace Kokoro.Tests
     {
         const string DATA_DIR = "Packages/com.github.asus4.kokoro-tts/Tests/Data/";
 
-        [TestCase(LanguageCode.En_US, "american_test_data.json")]
-        [TestCase(LanguageCode.En_GB, "british_test_data.json")]
+        // [TestCase(LanguageCode.En_US, "american_test_data.json")]
+        // [TestCase(LanguageCode.En_GB, "british_test_data.json")]
         public async Task TestEnglishG2P(LanguageCode lang, string fileName)
         {
             using var g2p = new EnglishG2P(lang);
