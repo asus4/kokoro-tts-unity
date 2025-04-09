@@ -22,9 +22,11 @@ namespace Kokoro
         public readonly string DataPath;
         public LanguageCode Language { get; private set; }
 
-        public ESpeakG2P(string dataPath)
+        public ESpeakG2P(string dataPath = null)
         {
-            DataPath = dataPath;
+            DataPath = string.IsNullOrEmpty(dataPath)
+                ? Path.Combine(Application.dataPath, "..", "espeak-ng-data")
+                : dataPath;
             Assert.IsTrue(Directory.Exists(dataPath), $"eSpeak data directory does not exist: {dataPath}");
         }
 

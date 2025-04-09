@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using System.IO;
-using NUnit.Framework;
 using Kokoro.Misaki;
+using NUnit.Framework;
 using UnityEngine;
 
 namespace Kokoro.Tests
@@ -25,11 +25,12 @@ namespace Kokoro.Tests
     {
         const string DATA_DIR = "Packages/com.github.asus4.kokoro-tts/Tests/Data/";
 
-        // [TestCase(LanguageCode.En_US, "american_test_data.json")]
-        // [TestCase(LanguageCode.En_GB, "british_test_data.json")]
-        public async Task TestEnglishG2P(LanguageCode lang, string fileName)
+        [TestCase(LanguageCode.En_US, "american_test_data.json")]
+        [TestCase(LanguageCode.En_GB, "british_test_data.json")]
+        public async Task TestMisakiEn(LanguageCode lang, string fileName)
         {
-            using var g2p = new EnglishG2P(lang);
+            using var g2p = new MisakiEnglishG2P();
+            await g2p.InitializeAsync(lang);
 
             var testData = await LoadTestData(fileName);
             foreach (var item in testData.data)
@@ -43,10 +44,7 @@ namespace Kokoro.Tests
         [TestCase(LanguageCode.En_GB, "british_test_data.json")]
         public async Task TestESpeakG2P(LanguageCode lang, string fileName)
         {
-            string dataPath = Path.Combine(Application.dataPath, "..", "espeak-ng-data");
-            Assert.IsTrue(Directory.Exists(dataPath), $"eSpeak data directory does not exist: {dataPath}");
-
-            using var g2p = new ESpeakG2P(dataPath);
+            using var g2p = new ESpeakG2P();
             await g2p.InitializeAsync(lang);
 
             var testData = await LoadTestData(fileName);

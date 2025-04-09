@@ -1,235 +1,725 @@
+// /*
+
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.IO;
+using System.Text.Json;
+using Catalyst;
+using Mosaik.Core;
 using System.Threading.Tasks;
-using UnityEngine;
-using Unity.Serialization.Json;
 
 namespace Kokoro.Misaki
 {
-    internal class TokenContext
+    internal class MToken
     {
-        public bool? FutureVowel { get; set; } = null;
-        public bool FutureTo { get; set; } = false;
+        public string Text { get; set; }
+        public string Tag { get; set; }
+        public string Whitespace { get; set; }
+        public string Phonemes { get; set; }
+        public double? StartTs { get; set; }
+        public double? EndTs { get; set; }
+        public Underscore _ { get; set; }
+
+        public MToken(string text, string tag, string whitespace, string phonemes = null,
+                      double? startTs = null, double? endTs = null, Underscore underscore = null)
+        {
+            Text = text;
+            Tag = tag;
+            Whitespace = whitespace;
+            Phonemes = phonemes;
+            StartTs = startTs;
+            EndTs = endTs;
+            _ = underscore ?? new Underscore();
+        }
+
+        public class Underscore
+        {
+            public bool IsHead { get; set; }
+            public string Alias { get; set; }
+            public double? Stress { get; set; }
+            public string Currency { get; set; }
+            public string NumFlags { get; set; }
+            public bool Prespace { get; set; }
+            public int? Rating { get; set; }
+
+            public Underscore()
+            {
+                NumFlags = "";
+            }
+        }
     }
 
-    public partial class EnglishG2P : IDisposable
+    internal static class Utils
     {
-        static readonly HashSet<char> DIPHTHONGS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'ʤ', 'ʧ' };
-        static readonly HashSet<char> VOWELS = new() { 'A', 'I', 'O', 'Q', 'W', 'Y', 'a', 'i', 'u', 'æ', 'ɑ', 'ɒ', 'ɔ', 'ə', 'ɛ', 'ɜ', 'ɪ', 'ʊ', 'ʌ', 'ᵻ' };
-        static readonly HashSet<char> CONSONANTS = new() { 'b', 'd', 'f', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 's', 't', 'v', 'w', 'z', 'ð', 'ŋ', 'ɡ', 'ɹ', 'ɾ', 'ʃ', 'ʒ', 'ʤ', 'ʧ', 'θ' };
-        static readonly HashSet<string> PUNCT_TAGS = new() { ".", ",", "-LRB-", "-RRB-", "``", "\"\"", "''", ":", "$", "#", "NFP" };
-        static readonly Dictionary<string, string> PUNCT_TAG_PHONEMES = new() {
-            { "-LRB-", "(" },
-            { "-RRB-", ")" },
-            { "``", "\u8220" },
-            { "\"\"".ToString(), "\u8221" },
-            { "''", "\u8221" }
-        };
-
-        public readonly LanguageCode LanguageCode;
-        private readonly Lexicon lexicon;
-        private readonly string unk;
-
-        // Main constructor
-        public EnglishG2P(LanguageCode lang, string unk = "❓")
+        public static MToken MergeTokens(List<MToken> tokens, string unk = null)
         {
-            this.unk = unk;
-            LanguageCode = lang;
-            lexicon = new Lexicon(lang == LanguageCode.En_GB);
-        }
-
-        public void Dispose()
-        {
-            // Clean up resources if needed
-        }
-
-        // Implementation of IG2P.Convert
-        public string Convert(ReadOnlySpan<char> textSpan)
-        {
-            string text = textSpan.ToString();
-
-            // 1. Preprocess the text
-            var (preprocessedText, rawTokens, features) = Preprocess(text);
-
-            // 2. Tokenize (simplified implementation as we don't have Spacy)
-            var tokens = Tokenize(preprocessedText);
-
-            // 3. Apply token conversion logic
-            ApplyTokenConversion(tokens);
-
-            // 4. Generate phonemes
-            string phonemes = string.Join("", tokens.Select(tk => (tk.Phonemes ?? unk) + tk.WhiteSpace));
-            return phonemes;
-        }
-
-        // Merge multiple tokens into one
-        private MToken MergeTokens(List<MToken> tokens, string unk = null)
-        {
-            // Get unique stress values
-            var stress = tokens
-                .Where(tk => tk._.Stress != null)
-                .Select(tk => tk._.Stress.Value)
-                .Distinct()
-                .ToList();
-
-            // Get unique currency values
-            var currency = tokens
-                .Where(tk => tk._.Currency != null)
-                .Select(tk => tk._.Currency)
-                .Distinct()
-                .ToList();
-
-            // Get ratings
-            var rating = tokens
-                .Select(tk => tk._.Rating)
-                .ToList();
+            var stress = tokens.Where(tk => tk._.Stress.HasValue).Select(tk => tk._.Stress.Value).ToHashSet();
+            var currency = tokens.Where(tk => tk._.Currency != null).Select(tk => tk._.Currency).ToHashSet();
+            var rating = tokens.Select(tk => tk._.Rating).ToHashSet();
 
             string phonemes = null;
             if (unk != null)
             {
                 var phonemeBuilder = new StringBuilder();
-                foreach (var tk in tokens)
+                for (int i = 0; i < tokens.Count; i++)
                 {
-                    if (tk._.PreSpace && phonemeBuilder.Length > 0 &&
-                        !char.IsWhiteSpace(phonemeBuilder[phonemeBuilder.Length - 1]) &&
-                        tk.Phonemes != null)
+                    var tk = tokens[i];
+                    if (i > 0 && tk._.Prespace && phonemeBuilder.Length > 0 &&
+                        !char.IsWhiteSpace(phonemeBuilder[phonemeBuilder.Length - 1]) && tk.Phonemes != null)
                     {
-                        phonemeBuilder.Append(" ");
+                        phonemeBuilder.Append(' ');
                     }
                     phonemeBuilder.Append(tk.Phonemes == null ? unk : tk.Phonemes);
                 }
                 phonemes = phonemeBuilder.ToString();
             }
 
-            // Build the combined token text
-            var textBuilder = new StringBuilder();
-            for (int i = 0; i < tokens.Count - 1; i++)
-            {
-                textBuilder.Append(tokens[i].Text);
-                textBuilder.Append(tokens[i].WhiteSpace);
-            }
-            textBuilder.Append(tokens.Last().Text);
-
-            // Find the tag with the highest priority
-            var tag = tokens.OrderByDescending(tk =>
-                tk.Text.Sum(c => char.IsLower(c) ? 1 : 2)).First().Tag;
+            var text = string.Join("", tokens.Take(tokens.Count - 1).Select(tk => tk.Text + tk.Whitespace)) + tokens.Last().Text;
+            var tag = tokens.OrderByDescending(tk => tk.Text.Sum(c => char.IsLower(c) ? 1 : 2)).First().Tag;
 
             return new MToken(
-                textBuilder.ToString(),
-                tag,
-                tokens.Last().WhiteSpace,
-                phonemes,
-                tokens.First().StartTS,
-                tokens.Last().EndTS)
-            {
-                _ = new UnderscoreData
+                text: text,
+                tag: tag,
+                whitespace: tokens.Last().Whitespace,
+                phonemes: phonemes,
+                startTs: tokens.First().StartTs,
+                endTs: tokens.Last().EndTs,
+                underscore: new MToken.Underscore
                 {
                     IsHead = tokens.First()._.IsHead,
                     Alias = null,
-                    Stress = stress.Count == 1 ? stress[0] : null,
+                    Stress = stress.Count == 1 ? stress.First() : null,
                     Currency = currency.Any() ? currency.Max() : null,
-                    NumFlags = string.Join("", tokens
-                        .SelectMany(tk => tk._.NumFlags)
-                        .Distinct()
-                        .OrderBy(c => c)),
-                    PreSpace = tokens.First()._.PreSpace,
+                    NumFlags = string.Join("", tokens.SelectMany(tk => tk._.NumFlags).OrderBy(c => c).Distinct()),
+                    Prespace = tokens.First()._.Prespace,
                     Rating = rating.Contains(null) ? null : rating.Min()
                 }
+            );
+        }
+
+        public static readonly HashSet<char> Diphthongs = new HashSet<char>("AIOQWYʤʧ");
+
+        public static int StressWeight(string ps)
+        {
+            if (string.IsNullOrEmpty(ps))
+                return 0;
+
+            return ps.Count(c => Diphthongs.Contains(c)) * 2 + ps.Count(c => !Diphthongs.Contains(c));
+        }
+
+        // Stub method for num2words
+        public static string Num2Words(int number, string to = "cardinal")
+        {
+            // In a real implementation, you would convert numbers to words
+            // For now, we'll simply return the number as a string with the conversion type
+            return $"{number}_{to}";
+        }
+
+        public static string Num2Words(float number)
+        {
+            // Stub for float conversion
+            return number.ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
+    public class TokenContext
+    {
+        public bool? FutureVowel { get; set; }
+        public bool FutureTo { get; set; }
+
+        public TokenContext(bool? futureVowel = null, bool futureTo = false)
+        {
+            FutureVowel = futureVowel;
+            FutureTo = futureTo;
+        }
+    }
+
+    internal class Lexicon
+    {
+        private readonly bool _british;
+        private readonly Tuple<double, double> _capStresses;
+        private readonly Dictionary<string, object> _golds;
+        private readonly Dictionary<string, object> _silvers;
+        private static readonly HashSet<char> GbVocab = new HashSet<char>("AIQWYabdfhijklmnpstuvwzðŋɑɒɔəɛɜɡɪɹʃʊʌʒʤʧˈˌːθᵊ");
+        private static readonly HashSet<char> UsVocab = new HashSet<char>("AIOWYbdfhijklmnpstuvwzæðŋɑɔəɛɜɡɪɹɾʃʊʌʒʤʧˈˌθᵊᵻʔ");
+        private static readonly HashSet<char> UsTaus = new HashSet<char>("AIOWYiuæɑəɛɪɹʊʌ");
+        private static readonly HashSet<char> Vowels = new HashSet<char>("AIOQWYaiuæɑɒɔəɛɜɪʊʌᵻ");
+        private static readonly HashSet<char> Consonants = new HashSet<char>("bdfhjklmnpstvwzðŋɡɹɾʃʒʤʧθ");
+        private static readonly HashSet<string> Ordinals = new HashSet<string> { "st", "nd", "rd", "th" };
+        private static readonly Dictionary<string, Tuple<string, string>> Currencies = new Dictionary<string, Tuple<string, string>>
+        {
+            { "$", Tuple.Create("dollar", "cent") },
+            { "£", Tuple.Create("pound", "pence") },
+            { "€", Tuple.Create("euro", "cent") }
+        };
+
+        private static readonly HashSet<int> LexiconOrds = new HashSet<int>
+        {
+            39, 45,
+        }.Concat(Enumerable.Range(65, 26)).Concat(Enumerable.Range(97, 26)).ToHashSet();
+
+        private static readonly string PrimaryStress = "ˈ";
+        private static readonly string SecondaryStress = "ˌ";
+        private static readonly string Stresses = SecondaryStress + PrimaryStress;
+
+        private static readonly Dictionary<string, string> AddSymbols = new Dictionary<string, string>
+        {
+            { ".", "dot" },
+            { "/", "slash" }
+        };
+
+        private static readonly Dictionary<string, string> Symbols = new Dictionary<string, string>
+        {
+            { "%", "percent" },
+            { "&", "and" },
+            { "+", "plus" },
+            { "@", "at" }
+        };
+
+        public Lexicon(bool british)
+        {
+            _british = british;
+            _capStresses = Tuple.Create(0.5, 2.0);
+            _golds = new Dictionary<string, object>();
+            _silvers = new Dictionary<string, object>();
+
+            // In a real implementation, you would load JSON data from files
+            // Here we're just initializing empty dictionaries
+            LoadLexiconData();
+        }
+
+        private void LoadLexiconData()
+        {
+            // This would load the lexicon data from JSON files
+            // For the sake of the example, we'll just add a few entries
+            _golds["to"] = "tə";
+            _golds["am"] = "æm";
+            _golds["used"] = new Dictionary<string, string>
+            {
+                { "DEFAULT", "juːzd" },
+                { "VBD", "juːst" }
             };
         }
 
-        // Calculate stress weight
-        private int StressWeight(string phonemes)
+        public static Dictionary<string, object> GrowDictionary(Dictionary<string, object> d)
         {
-            if (string.IsNullOrEmpty(phonemes)) return 0;
-
-            return phonemes.Sum(c => DIPHTHONGS.Contains(c) ? 2 : 1);
-        }
-
-        // Preprocess text
-        internal static (string, List<string>, Dictionary<int, object>) Preprocess(string text)
-        {
-            // Simple implementation - in a real app, you'd parse Markdown links, etc.
-            return (text, text.Split(' ').ToList(), new Dictionary<int, object>());
-        }
-
-        // Tokenize text (simplified)
-        private List<MToken> Tokenize(string text)
-        {
-            // Simplified tokenization - in a real app, you'd use a proper NLP library
-            return text.Split(' ')
-                .Select(t => new MToken(
-                    t,
-                    DetermineTag(t),
-                    " ",
-                    null))
-                .ToList();
-        }
-
-        // Simple tag determination
-        private string DetermineTag(string token)
-        {
-            // This is a very simplified implementation
-            if (Regex.IsMatch(token, @"^\d+$")) return "CD";
-            if (token.All(c => char.IsPunctuation(c))) return ".";
-            return "NN";
-        }
-
-        // Apply token conversion
-        private void ApplyTokenConversion(List<MToken> tokens)
-        {
-            var ctx = new TokenContext();
-
-            foreach (var token in tokens)
+            var result = new Dictionary<string, object>(d);
+            foreach (var kv in d)
             {
-                if (token.Phonemes == null)
-                {
-                    var (phonemes, rating) = lexicon.GetWord(token, token.Tag, token._.Stress, ctx);
-                    token.Phonemes = phonemes;
-                    token._.Rating = rating;
-                }
+                string k = kv.Key;
+                if (k.Length < 2)
+                    continue;
 
-                // Update context for next iteration
-                ctx = UpdateContext(ctx, token.Phonemes, token);
+                if (k == k.ToLower())
+                {
+                    if (k != CapitalizeFirst(k))
+                        result[CapitalizeFirst(k)] = kv.Value;
+                }
+                else if (k == CapitalizeFirst(k.ToLower()))
+                {
+                    result[k.ToLower()] = kv.Value;
+                }
+            }
+            return result;
+        }
+
+        private static string CapitalizeFirst(string s)
+        {
+            if (string.IsNullOrEmpty(s))
+                return s;
+            return char.ToUpper(s[0]) + s.Substring(1);
+        }
+
+        public Tuple<string, int> GetNNP(string word)
+        {
+            var ps = word.Where(c => char.IsLetter(c))
+                        .Select(c => _golds.TryGetValue(c.ToString().ToUpper(), out var val) ? val as string : null)
+                        .ToList();
+
+            if (ps.Contains(null))
+                return Tuple.Create<string, int>(null, 0);
+
+            var psStr = ApplyStress(string.Join("", ps), 0);
+            var parts = psStr.Split(new[] { SecondaryStress }, 2, StringSplitOptions.None);
+            return Tuple.Create(string.Join(PrimaryStress, parts), 3);
+        }
+
+        public Tuple<string, int> GetSpecialCase(string word, string tag, double? stress, TokenContext ctx)
+        {
+            if (tag == "ADD" && AddSymbols.ContainsKey(word))
+                return Lookup(AddSymbols[word], null, -0.5, ctx);
+            else if (Symbols.ContainsKey(word))
+                return Lookup(Symbols[word], null, null, ctx);
+            else if (word.Contains(".") && word.Trim('.').All(char.IsLetter) &&
+                    word.Split('.').Max(s => s.Length) < 3)
+                return GetNNP(word);
+            else if (word == "a" || word == "A")
+                return Tuple.Create(tag == "DT" ? "ɐ" : "ˈA", 4);
+            else if (word == "am" || word == "Am" || word == "AM")
+            {
+                if (tag.StartsWith("NN"))
+                    return GetNNP(word);
+                else if (ctx.FutureVowel == null || word != "am" || (stress.HasValue && stress > 0))
+                    return Tuple.Create(_golds["am"] as string, 4);
+                return Tuple.Create("ɐm", 4);
+            }
+            // Implement other special cases as needed
+
+            return Tuple.Create<string, int>(null, 0);
+        }
+
+        public static string GetParentTag(string tag)
+        {
+            if (tag == null)
+                return tag;
+            else if (tag.StartsWith("VB"))
+                return "VERB";
+            else if (tag.StartsWith("NN"))
+                return "NOUN";
+            else if (tag.StartsWith("ADV") || tag.StartsWith("RB"))
+                return "ADV";
+            else if (tag.StartsWith("ADJ") || tag.StartsWith("JJ"))
+                return "ADJ";
+            return tag;
+        }
+
+        public bool IsKnown(string word, string tag)
+        {
+            if (_golds.ContainsKey(word) || Symbols.ContainsKey(word) || _silvers.ContainsKey(word))
+                return true;
+            else if (!word.All(char.IsLetter) || !word.All(c => LexiconOrds.Contains(c)))
+                return false;
+            else if (word.Length == 1)
+                return true;
+            else if (word == word.ToUpper() && _golds.ContainsKey(word.ToLower()))
+                return true;
+
+            return word.Substring(1) == word.Substring(1).ToUpper();
+        }
+
+        public Tuple<string, int> Lookup(string word, string tag, double? stress, TokenContext ctx)
+        {
+            bool? isNNP = null;
+            if (word == word.ToUpper() && !_golds.ContainsKey(word))
+            {
+                word = word.ToLower();
+                isNNP = tag == "NNP";
+            }
+
+            object psObj = null;
+            int rating = 4;
+
+            if (_golds.TryGetValue(word, out psObj))
+            {
+                // Found in golds
+            }
+            else if (!isNNP.HasValue || !isNNP.Value)
+            {
+                if (_silvers.TryGetValue(word, out psObj))
+                    rating = 3;
+            }
+
+            string ps = null;
+            if (psObj is string strPs)
+            {
+                ps = strPs;
+            }
+            else if (psObj is Dictionary<string, string> dict)
+            {
+                // Handle dictionary lookup
+                if (ctx != null && ctx.FutureVowel == null && dict.ContainsKey("None"))
+                    tag = "None";
+                else if (!dict.ContainsKey(tag))
+                    tag = GetParentTag(tag);
+
+                ps = dict.TryGetValue(tag, out var tagValue) ? tagValue : dict["DEFAULT"];
+            }
+
+            if (ps == null || (isNNP.HasValue && isNNP.Value && !ps.Contains(PrimaryStress)))
+            {
+                var nnpResult = GetNNP(word);
+                if (nnpResult.Item1 != null)
+                    return nnpResult;
+            }
+
+            return Tuple.Create(ApplyStress(ps, stress), rating);
+        }
+
+        public static string ApplyStress(string ps, double? stress)
+        {
+            if (string.IsNullOrEmpty(ps) || !stress.HasValue)
+                return ps;
+
+            if (stress < -1)
+                return ps.Replace(PrimaryStress, "").Replace(SecondaryStress, "");
+            else if (stress == -1 || ((stress == 0 || stress == -0.5) && ps.Contains(PrimaryStress)))
+                return ps.Replace(SecondaryStress, "").Replace(PrimaryStress, SecondaryStress);
+            else if ((stress == 0 || stress == 0.5 || stress == 1) &&
+                    !ps.Contains(PrimaryStress) && !ps.Contains(SecondaryStress))
+            {
+                if (!ps.Any(c => Vowels.Contains(c)))
+                    return ps;
+
+                // Implementation of restress would go here
+                return SecondaryStress + ps;
+            }
+            else if (stress >= 1 && !ps.Contains(PrimaryStress) && ps.Contains(SecondaryStress))
+                return ps.Replace(SecondaryStress, PrimaryStress);
+            else if (stress > 1 && !ps.Contains(PrimaryStress) && !ps.Contains(SecondaryStress))
+            {
+                if (!ps.Any(c => Vowels.Contains(c)))
+                    return ps;
+
+                // Implementation of restress would go here
+                return PrimaryStress + ps;
+            }
+
+            return ps;
+        }
+
+        public static bool IsDigit(string text)
+        {
+            return Regex.IsMatch(text, @"^[0-9]+$");
+        }
+
+        // Other methods would be implemented similarly
+        public Tuple<string, int> GetWord(string word, string tag, double? stress, TokenContext ctx)
+        {
+            var specialCase = GetSpecialCase(word, tag, stress, ctx);
+            if (specialCase.Item1 != null)
+                return specialCase;
+
+            // The rest of the implementation would go here
+
+            return Tuple.Create<string, int>(null, 0);
+        }
+
+        public Tuple<string, int> this[MToken tk, TokenContext ctx]
+        {
+            get
+            {
+                string word = (tk._.Alias == null ? tk.Text : tk._.Alias)
+                    .Replace('\u2018', '\'')
+                    .Replace('\u2019', '\'');
+
+                word = NormalizeString(word);
+
+                double? stress = null;
+                if (word != word.ToLower())
+                    stress = word == word.ToUpper() ? _capStresses.Item2 : _capStresses.Item1;
+
+                var result = GetWord(word, tk.Tag, stress, ctx);
+                if (result.Item1 != null)
+                    return Tuple.Create(ApplyStress(AppendCurrency(result.Item1, tk._.Currency), tk._.Stress), result.Item2);
+                else if (IsNumber(word, tk._.IsHead))
+                {
+                    var numResult = GetNumber(word, tk._.Currency, tk._.IsHead, tk._.NumFlags);
+                    return Tuple.Create(ApplyStress(numResult.Item1, tk._.Stress), numResult.Item2);
+                }
+                else if (!word.All(c => LexiconOrds.Contains(c)))
+                    return Tuple.Create<string, int>(null, 0);
+
+                return Tuple.Create<string, int>(null, 0);
             }
         }
 
-        // Update token context
-        private TokenContext UpdateContext(TokenContext ctx, string phonemes, MToken token)
+        // Helper methods
+        private string NormalizeString(string s)
+        {
+            // Implementation for normalizing strings would go here
+            return s;
+        }
+
+        private string AppendCurrency(string ps, string currency)
+        {
+            if (string.IsNullOrEmpty(currency))
+                return ps;
+
+            if (Currencies.TryGetValue(currency, out var currencyTuple))
+            {
+                var currencyStr = StemS(currencyTuple.Item1 + "s", null, null, null).Item1;
+                return currencyStr != null ? $"{ps} {currencyStr}" : ps;
+            }
+
+            return ps;
+        }
+
+        public Tuple<string, int> StemS(string word, string tag, double? stress, TokenContext ctx)
+        {
+            // Implementation for stemming -s endings
+            return Tuple.Create<string, int>(null, 0);
+        }
+
+        private static bool IsNumber(string word, bool isHead)
+        {
+            if (word.All(c => !IsDigit(c.ToString())))
+                return false;
+
+            var suffixes = new List<string> { "ing", "'d", "ed", "'s" }.Concat(Ordinals).Append("s");
+            foreach (var s in suffixes)
+            {
+                if (word.EndsWith(s))
+                {
+                    word = word.Substring(0, word.Length - s.Length);
+                    break;
+                }
+            }
+
+            return word.Select((c, i) =>
+                IsDigit(c.ToString()) || c == ',' || c == '.' ||
+                (isHead && i == 0 && c == '-')).All(x => x);
+        }
+
+        public Tuple<string, int> GetNumber(string word, string currency, bool isHead, string numFlags)
+        {
+            // Implementation for processing numbers
+            return Tuple.Create<string, int>(null, 0);
+        }
+    }
+
+    public class MisakiEnglishG2P : IG2P
+    {
+        private readonly bool _british;
+        private readonly Lexicon _lexicon;
+        private readonly string _unk;
+        private Pipeline _nlp;
+
+        private static readonly Regex LinkRegex = new Regex(@"\[([^\]]+)\]\(([^\)]*)\)");
+
+        public MisakiEnglishG2P(bool trf = false, bool british = false, string unk = "❓")
+        {
+            Catalyst.Models.English.Register();
+
+            _british = british;
+            _lexicon = new Lexicon(british);
+            _unk = unk;
+        }
+
+        public void Dispose()
+        {
+        }
+
+        public async Task InitializeAsync(LanguageCode langCode)
+        {
+            // Initialize Catalyst model
+            var language = langCode switch
+            {
+                LanguageCode.En_GB => Language.English,
+                LanguageCode.En_US => Language.English,
+                _ => throw new NotImplementedException(),
+            };
+            _nlp = await Pipeline.ForAsync(language);
+        }
+
+        public string Convert(ReadOnlySpan<char> input)
+        {
+            var result = Convert(input.ToString(), preprocess: true);
+            return result.Item1;
+        }
+
+        public static Tuple<string, List<string>, Dictionary<int, object>> Preprocess(string text)
+        {
+            var result = new StringBuilder();
+            var tokens = new List<string>();
+            var features = new Dictionary<int, object>();
+
+            int lastEnd = 0;
+            text = text.TrimStart();
+
+            foreach (Match m in LinkRegex.Matches(text))
+            {
+                result.Append(text.Substring(lastEnd, m.Index - lastEnd));
+                tokens.AddRange(text.Substring(lastEnd, m.Index - lastEnd).Split());
+
+                var f = m.Groups[2].Value;
+                object feature = null;
+
+                if (IsDigit(f.TrimStart('-', '+')))
+                    feature = int.Parse(f);
+                else if (f == "0.5" || f == "+0.5")
+                    feature = 0.5;
+                else if (f == "-0.5")
+                    feature = -0.5;
+                else if (f.Length > 1 && f[0] == '/' && f[f.Length - 1] == '/')
+                    feature = "/" + f.Substring(1, f.Length - 2);
+                else if (f.Length > 1 && f[0] == '#' && f[f.Length - 1] == '#')
+                    feature = "#" + f.Substring(1, f.Length - 2);
+
+                if (feature != null)
+                    features[tokens.Count] = feature;
+
+                result.Append(m.Groups[1].Value);
+                tokens.Add(m.Groups[1].Value);
+                lastEnd = m.Index + m.Length;
+            }
+
+            if (lastEnd < text.Length)
+            {
+                result.Append(text.Substring(lastEnd));
+                tokens.AddRange(text.Substring(lastEnd).Split());
+            }
+
+            return Tuple.Create(result.ToString(), tokens, features);
+        }
+
+        private static bool IsDigit(string s)
+        {
+            return !string.IsNullOrEmpty(s) && s.All(char.IsDigit);
+        }
+
+        List<MToken> Tokenize(string text, List<string> tokens, Dictionary<int, object> features)
+        {
+            // Use Catalyst to tokenize and tag the text
+            var doc = new Document(text, Language.English);
+
+            IDocument document = _nlp.ProcessSingle(doc);
+
+            var mutableTokens = document.ToTokenList().Select(token => new MToken(
+                text: token.OriginalValue,
+                tag: token.POS.ToString(),
+                whitespace: (token.PreviousChar.HasValue && char.IsWhiteSpace(token.PreviousChar.Value))
+                    ? " "
+                    : "",
+                underscore: new MToken.Underscore { IsHead = true, NumFlags = "", Prespace = false }
+            )).ToList();
+
+            if (features.Count == 0)
+                return mutableTokens;
+
+            // Implement alignment between original tokens and processed tokens
+            // This is a simplified version
+            var alignment = AlignTokens(tokens, mutableTokens.Select(t => t.Text).ToList());
+
+            foreach (var kv in features)
+            {
+                var k = kv.Key;
+                var v = kv.Value;
+
+                var indices = alignment.Where(a => a.Item1 == k).Select(a => a.Item2).ToList();
+
+                for (int i = 0; i < indices.Count; i++)
+                {
+                    var j = indices[i];
+                    if (j >= mutableTokens.Count)
+                        continue;
+
+                    if (v is double dbl)
+                        mutableTokens[j]._.Stress = dbl;
+                    else if (v is string str)
+                    {
+                        if (str.StartsWith("/"))
+                        {
+                            mutableTokens[j]._.IsHead = i == 0;
+                            mutableTokens[j].Phonemes = i == 0 ? str.TrimStart('/') : "";
+                            mutableTokens[j]._.Rating = 5;
+                        }
+                        else if (str.StartsWith("#"))
+                        {
+                            mutableTokens[j]._.NumFlags = str.TrimStart('#');
+                        }
+                    }
+                }
+            }
+
+            return mutableTokens;
+        }
+
+        // Simple token alignment algorithm
+        private List<Tuple<int, int>> AlignTokens(List<string> sourceTokens, List<string> destTokens)
+        {
+            var result = new List<Tuple<int, int>>();
+            int j = 0;
+
+            for (int i = 0; i < sourceTokens.Count; i++)
+            {
+                if (j < destTokens.Count)
+                {
+                    result.Add(Tuple.Create(i, j));
+                    j++;
+                }
+            }
+
+            return result;
+        }
+
+        List<MToken> FoldLeft(List<MToken> tokens)
+        {
+            var result = new List<MToken>();
+
+            foreach (var tk in tokens)
+            {
+                if (result.Count > 0 && !tk._.IsHead)
+                    result.Add(Utils.MergeTokens(new List<MToken> { result[result.Count - 1], tk }, _unk));
+                else
+                    result.Add(tk);
+            }
+
+            return result;
+        }
+
+        static List<object> Retokenize(List<MToken> tokens)
+        {
+            var words = new List<object>();
+            string currency = null;
+
+            // Implementation of retokenize would go here
+
+            return words;
+        }
+
+        static TokenContext TokenContext(TokenContext ctx, string ps, MToken token)
         {
             bool? vowel = ctx.FutureVowel;
-
-            if (!string.IsNullOrEmpty(phonemes))
-            {
-                foreach (char c in phonemes)
-                {
-                    if (VOWELS.Contains(c))
-                    {
-                        vowel = true;
-                        break;
-                    }
-                    if (CONSONANTS.Contains(c))
-                    {
-                        vowel = false;
-                        break;
-                    }
-                }
-            }
-
-            bool futureTo = token.Text.ToLower() == "to" ||
+            // Implementation would go here
+            bool futureTo = token.Text == "to" || token.Text == "To" ||
                            (token.Text == "TO" && (token.Tag == "TO" || token.Tag == "IN"));
 
-            return new TokenContext
-            {
-                FutureVowel = vowel,
-                FutureTo = futureTo
-            };
+            return new TokenContext(futureVowel: vowel, futureTo: futureTo);
         }
 
+        static void ResolveTokens(List<MToken> tokens)
+        {
+            // Implementation would go here
+        }
 
+        Tuple<string, List<MToken>> Convert(string text, bool preprocess = true)
+        {
+            Func<string, Tuple<string, List<string>, Dictionary<int, object>>> preprocessFn =
+                preprocess ? MisakiEnglishG2P.Preprocess : null;
+
+            var preprocessResult = preprocessFn != null ?
+                preprocessFn(text) :
+                Tuple.Create(text, new List<string>(), new Dictionary<int, object>());
+
+            var tokens = Tokenize(
+                preprocessResult.Item1,
+                preprocessResult.Item2,
+                preprocessResult.Item3
+            );
+
+            tokens = FoldLeft(tokens);
+            var retokenized = Retokenize(tokens);
+
+            var ctx = new TokenContext();
+
+            // Process tokens in reverse order
+            for (int i = retokenized.Count - 1; i >= 0; i--)
+            {
+                var w = retokenized[i];
+                // Process each token
+                // Implementation would go here
+            }
+
+            // Final processing and result generation
+            // Implementation would go here
+
+            return Tuple.Create("", new List<MToken>());
+        }
     }
 }
+
+// */
