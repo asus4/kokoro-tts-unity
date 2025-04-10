@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using ESpeakNg;
 using UnityEngine;
@@ -37,7 +38,7 @@ namespace Kokoro
             // Assert.AreEqual(espeak_ERROR.EE_OK, result, $"Failed to terminate espeak-ng: {result}");
         }
 
-        public Task InitializeAsync(LanguageCode lang)
+        public Task InitializeAsync(LanguageCode lang, CancellationToken cancellationToken)
         {
             Language = lang;
 

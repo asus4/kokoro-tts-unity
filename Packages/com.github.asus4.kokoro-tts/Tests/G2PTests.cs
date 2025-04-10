@@ -30,7 +30,7 @@ namespace Kokoro.Tests
         public async Task TestMisakiEn(LanguageCode lang, string fileName)
         {
             using var g2p = new MisakiEnglishG2P();
-            await g2p.InitializeAsync(lang);
+            await g2p.InitializeAsync(lang, default);
 
             var testData = await LoadTestData(fileName);
             foreach (var item in testData.data)
@@ -45,7 +45,7 @@ namespace Kokoro.Tests
         public async Task TestESpeakG2P(LanguageCode lang, string fileName)
         {
             using var g2p = new ESpeakG2P();
-            await g2p.InitializeAsync(lang);
+            await g2p.InitializeAsync(lang, default);
 
             var testData = await LoadTestData(fileName);
             foreach (var item in testData.data)
