@@ -192,42 +192,50 @@ namespace Kokoro.Misaki
             { "@", "at" }
         };
 
-        public Lexicon(LanguageCode lang, Dictionary<string, object> gold, Dictionary<string, object> silver)
+        Lexicon(LanguageCode lang, Dictionary<string, object> gold, Dictionary<string, object> silver)
         {
             _languageCode = lang;
             _golds = gold;
             _silvers = silver;
         }
 
-        public static async Awaitable<Lexicon> CreateAsync(LanguageCode lang, CancellationToken cancellationToken)
+        public static async Task<Lexicon> CreateAsync(LanguageCode lang, CancellationToken cancellationToken)
         {
             await Awaitable.MainThreadAsync();
-            const string prefix = "KokoroTTS/Misaki";
-
             bool isBritish = lang switch
             {
                 LanguageCode.En_GB => true,
                 LanguageCode.En_US => false,
                 _ => throw new NotImplementedException($"Language {lang} is not supported.")
             };
+            const string prefix = "KokoroTTS/Misaki";
             string goldPath = isBritish ? $"{prefix}/gb_gold" : $"{prefix}/us_gold";
             string silverPath = isBritish ? $"{prefix}/gb_silver" : $"{prefix}/us_silver";
-            var gold = await LoadDictResource(goldPath, cancellationToken);
-            var silver = await LoadDictResource(silverPath, cancellationToken);
-            gold = GrowDictionary(gold);
-            silver = GrowDictionary(silver);
-            var lexicon = new Lexicon(lang, gold, silver);
+
+            var dicts = await Task.WhenAll(
+                LoadDictResource(goldPath, cancellationToken),
+                LoadDictResource(silverPath, cancellationToken)
+            );
+            cancellationToken.ThrowIfCancellationRequested();
+            var lexicon = new Lexicon(lang, dicts[0], dicts[1]);
 
             await Awaitable.MainThreadAsync();
             return lexicon;
         }
 
-        static async Awaitable<Dictionary<string, object>> LoadDictResource(string path, CancellationToken cancellationToken)
+        static async Task<Dictionary<string, object>> LoadDictResource(string path, CancellationToken cancellationToken)
         {
+            await Awaitable.MainThreadAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+
             var request = Resources.LoadAsync<TextAsset>(path);
             await request;
             var asset = request.asset as TextAsset;
             string text = asset.text;
+
+            // Run heavy process on BG thread
+            await Awaitable.BackgroundThreadAsync();
+            cancellationToken.ThrowIfCancellationRequested();
 
             var rawDict = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(text);
             // JObject -> Dictionary<string, string>
@@ -244,8 +252,7 @@ namespace Kokoro.Misaki
                     dict[kv.Key] = jObj.ToObject<Dictionary<string, string>>();
                 }
             }
-            await Awaitable.BackgroundThreadAsync();
-            return dict;
+            return GrowDictionary(dict);
         }
 
         static Dictionary<string, object> GrowDictionary(Dictionary<string, object> d)
@@ -280,12 +287,11 @@ namespace Kokoro.Misaki
             return char.ToUpper(s[0]) + s.Substring(1);
         }
 
-        public Tuple<string, int> GetNNP(string word)
+        Tuple<string, int> GetNNP(string word)
         {
             var ps = word
                 .Where(c => char.IsLetter(c))
-                .Select(c => _golds.TryGetValue(c.ToString().ToUpper(), out var val) ? val as string : null)
-                .ToList();
+                .Select(c => _golds.TryGetValue(c.ToString().ToUpper(), out var val) ? val as string : null);
 
             if (ps.Contains(null))
                 return Tuple.Create<string, int>(null, 0);
@@ -295,18 +301,25 @@ namespace Kokoro.Misaki
             return Tuple.Create(string.Join(PrimaryStress, parts), 3);
         }
 
-        public Tuple<string, int> GetSpecialCase(string word, string tag, double? stress, TokenContext ctx)
+        Tuple<string, int> GetSpecialCase(string word, string tag, double? stress, TokenContext ctx)
         {
-            if (tag == "ADD" && AddSymbols.ContainsKey(word))
-                return Lookup(AddSymbols[word], null, -0.5, ctx);
-            else if (Symbols.ContainsKey(word))
-                return Lookup(Symbols[word], null, null, ctx);
-            else if (word.Contains(".") && word.Trim('.').All(char.IsLetter) &&
-                    word.Split('.').Max(s => s.Length) < 3)
+            if (tag == "ADD" && AddSymbols.TryGetValue(word, out string addSymbol))
+            {
+                return Lookup(addSymbol, null, -0.5, ctx);
+            }
+            if (Symbols.TryGetValue(word, out string symbol))
+            {
+                return Lookup(symbol, null, null, ctx);
+            }
+            if (word.Contains(".") && word.Trim('.').All(char.IsLetter) && word.Split('.').Max(s => s.Length) < 3)
+            {
                 return GetNNP(word);
-            else if (word == "a" || word == "A")
+            }
+            if (word == "a" || word == "A")
+            {
                 return Tuple.Create(tag == "DT" ? "ɐ" : "ˈA", 4);
-            else if (word == "am" || word == "Am" || word == "AM")
+            }
+            if (word == "am" || word == "Am" || word == "AM")
             {
                 if (tag.StartsWith("NN"))
                     return GetNNP(word);
@@ -319,20 +332,15 @@ namespace Kokoro.Misaki
             return Tuple.Create<string, int>(null, 0);
         }
 
-        public static string GetParentTag(string tag)
+        static string GetParentTag(string tag) => tag switch
         {
-            if (tag == null)
-                return tag;
-            else if (tag.StartsWith("VB"))
-                return "VERB";
-            else if (tag.StartsWith("NN"))
-                return "NOUN";
-            else if (tag.StartsWith("ADV") || tag.StartsWith("RB"))
-                return "ADV";
-            else if (tag.StartsWith("ADJ") || tag.StartsWith("JJ"))
-                return "ADJ";
-            return tag;
-        }
+            null => tag,
+            string s when s.StartsWith("VB") => "VERB",
+            string s when s.StartsWith("NN") => "NOUN",
+            string s when s.StartsWith("ADV") || s.StartsWith("RB") => "ADV", // or tag == 'RP':
+            string s when s.StartsWith("ADJ") || s.StartsWith("JJ") => "ADJ",
+            _ => tag,
+        };
 
         public bool IsKnown(string word, string tag)
         {

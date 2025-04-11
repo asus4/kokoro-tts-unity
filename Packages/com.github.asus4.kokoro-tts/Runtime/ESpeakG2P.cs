@@ -28,7 +28,7 @@ namespace Kokoro
             DataPath = string.IsNullOrEmpty(dataPath)
                 ? Path.Combine(Application.dataPath, "..", "espeak-ng-data")
                 : dataPath;
-            Assert.IsTrue(Directory.Exists(dataPath), $"eSpeak data directory does not exist: {dataPath}");
+            Assert.IsTrue(Directory.Exists(DataPath), $"eSpeak data directory does not exist: {DataPath}");
         }
 
         public void Dispose()
