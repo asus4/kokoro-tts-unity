@@ -14,7 +14,7 @@ using Newtonsoft.Json.Linq;
 namespace Kokoro.Misaki
 {
     #region MToken
-    internal class MToken
+    internal record MToken
     {
         public string Text { get; set; }
         public string Tag { get; set; }
@@ -159,8 +159,8 @@ namespace Kokoro.Misaki
 
         static readonly Tuple<double, double> _capStresses = Tuple.Create(0.5, 2.0);
         static readonly HashSet<char> UsTaus = new("AIOWYiuæɑəɛɪɹʊʌ");
-        static readonly HashSet<char> Vowels = new("AIOQWYaiuæɑɒɔəɛɜɪʊʌᵻ");
-        static readonly HashSet<char> Consonants = new("bdfhjklmnpstvwzðŋɡɹɾʃʒʤʧθ");
+        public static readonly HashSet<char> Vowels = new("AIOQWYaiuæɑɒɔəɛɜɪʊʌᵻ");
+        public static readonly HashSet<char> Consonants = new("bdfhjklmnpstvwzðŋɡɹɾʃʒʤʧθ");
         static readonly HashSet<string> Ordinals = new() { "st", "nd", "rd", "th" };
         static readonly Dictionary<string, Tuple<string, string>> Currencies = new()
         {
@@ -327,7 +327,52 @@ namespace Kokoro.Misaki
                     return Tuple.Create(_golds["am"] as string, 4);
                 return Tuple.Create("ɐm", 4);
             }
-            // Implement other special cases as needed
+            if (word == "an" || word == "An" || word == "AN")
+            {
+                if (word == "AN" && tag.StartsWith("NN"))
+                    return GetNNP(word);
+                return Tuple.Create("ɐn", 4);
+            }
+            if (word == "I" && tag == "PRP")
+            {
+                return Tuple.Create($"{SecondaryStress}I", 4);
+            }
+            if ((word == "by" || word == "By" || word == "BY") && GetParentTag(tag) == "ADV")
+            {
+                return Tuple.Create("bˈI", 4);
+            }
+            if (word == "to" || word == "To" || (word == "TO" && (tag == "TO" || tag == "IN")))
+            {
+                if (ctx.FutureVowel == null)
+                    return Tuple.Create(_golds["to"] as string, 4);
+                else if (ctx.FutureVowel == false)
+                    return Tuple.Create("tə", 4);
+                else
+                    return Tuple.Create("tʊ", 4);
+            }
+            if (word == "in" || word == "In" || (word == "IN" && tag != "NNP"))
+            {
+                string stressStr = (ctx.FutureVowel == null || tag != "IN") ? PrimaryStress : "";
+                return Tuple.Create($"{stressStr}ɪn", 4);
+            }
+            if (word == "the" || word == "The" || (word == "THE" && tag == "DT"))
+            {
+                return Tuple.Create(ctx.FutureVowel == true ? "ði" : "ðə", 4);
+            }
+            if (tag == "IN" && Regex.IsMatch(word, @"(?i)vs\.?$"))
+            {
+                return Lookup("versus", null, null, ctx);
+            }
+            if (word == "used" || word == "Used" || word == "USED")
+            {
+                if ((tag == "VBD" || tag == "JJ") && ctx.FutureTo)
+                {
+                    if (_golds["used"] is Dictionary<string, string> usedDict && usedDict.TryGetValue("VBD", out string vbd))
+                        return Tuple.Create(vbd, 4);
+                }
+                if (_golds["used"] is Dictionary<string, string> usedDefault && usedDefault.TryGetValue("DEFAULT", out string defaultVal))
+                    return Tuple.Create(defaultVal, 4);
+            }
 
             return Tuple.Create<string, int>(null, 0);
         }
@@ -356,40 +401,37 @@ namespace Kokoro.Misaki
             return word.Substring(1) == word.Substring(1).ToUpper();
         }
 
-        public Tuple<string, int> Lookup(string word, string tag, double? stress, TokenContext ctx)
+        Tuple<string, int> Lookup(string word, string tag, double? stress, TokenContext ctx)
         {
             bool? isNNP = null;
-            if (word == word.ToUpper() && !_golds.ContainsKey(word))
+
+            bool isContainsGold = _golds.TryGetValue(word, out object psObj);
+            if (word == word.ToUpper() && !isContainsGold)
             {
                 word = word.ToLower();
-                isNNP = tag == "NNP";
+                isNNP = tag == "NNP"; // #Lexicon.get_parent_tag(tag) == 'NOUN'
             }
 
-            object psObj = null;
             int rating = 4;
 
-            if (_golds.TryGetValue(word, out psObj))
+            if (!isContainsGold && (!isNNP.HasValue || !isNNP.Value))
             {
-                // Found in golds
-            }
-            else if (!isNNP.HasValue || !isNNP.Value)
-            {
-                if (_silvers.TryGetValue(word, out psObj))
-                    rating = 3;
+                _silvers.TryGetValue(word, out psObj);
+                rating = 3;
             }
 
             string ps = null;
-            if (psObj is string strPs)
-            {
-                ps = strPs;
-            }
-            else if (psObj is Dictionary<string, string> dict)
+            if (psObj is Dictionary<string, string> dict)
             {
                 // Handle dictionary lookup
                 if (ctx != null && ctx.FutureVowel == null && dict.ContainsKey("None"))
+                {
                     tag = "None";
+                }
                 else if (!dict.ContainsKey(tag))
+                {
                     tag = GetParentTag(tag);
+                }
 
                 ps = dict.TryGetValue(tag, out var tagValue) ? tagValue : dict["DEFAULT"];
             }
@@ -459,7 +501,7 @@ namespace Kokoro.Misaki
                     .Replace('\u2018', '\'')
                     .Replace('\u2019', '\'');
 
-                word = NormalizeString(word);
+                word = word.Normalize(NormalizationForm.FormKC);
 
                 double? stress = null;
                 if (word != word.ToLower())
@@ -481,11 +523,7 @@ namespace Kokoro.Misaki
         }
 
         // Helper methods
-        private string NormalizeString(string s)
-        {
-            // Implementation for normalizing strings would go here
-            return s;
-        }
+
 
         private string AppendCurrency(string ps, string currency)
         {
@@ -545,6 +583,10 @@ namespace Kokoro.Misaki
 
         static readonly Regex LinkRegex = new(@"\[([^\]]+)\]\(([^\)]*)\)");
 
+        static readonly HashSet<char> SubtokenJunks = new("',-._‘’/");
+        static readonly HashSet<char> Puncts = new(";:,.!?—…\"“”");
+        static readonly HashSet<char> NonQuotePuncts = new(";:,.!?—…");
+
         public MisakiEnglishG2P(bool trf = false, string unk = "❓")
         {
             Catalyst.Models.English.Register();
@@ -573,11 +615,11 @@ namespace Kokoro.Misaki
 
         public string Convert(ReadOnlySpan<char> input)
         {
-            var result = Convert(input.ToString(), preprocess: true);
+            var result = Convert(input.ToString());
             return result.Item1;
         }
 
-        public static Tuple<string, List<string>, Dictionary<int, object>> Preprocess(string text)
+        static Tuple<string, List<string>, Dictionary<int, object>> Preprocess(string text)
         {
             var result = new StringBuilder();
             var tokens = new List<string>();
@@ -615,14 +657,14 @@ namespace Kokoro.Misaki
 
             if (lastEnd < text.Length)
             {
-                result.Append(text.Substring(lastEnd));
-                tokens.AddRange(text.Substring(lastEnd).Split());
+                result.Append(text[lastEnd..]);
+                tokens.AddRange(text[lastEnd..].Split());
             }
 
             return Tuple.Create(result.ToString(), tokens, features);
         }
 
-        private static bool IsDigit(string s)
+        static bool IsDigit(string s)
         {
             return !string.IsNullOrEmpty(s) && s.All(char.IsDigit);
         }
@@ -644,7 +686,9 @@ namespace Kokoro.Misaki
             )).ToList();
 
             if (features.Count == 0)
+            {
                 return mutableTokens;
+            }
 
             // Implement alignment between original tokens and processed tokens
             // This is a simplified version
@@ -719,18 +763,36 @@ namespace Kokoro.Misaki
 
         static List<object> Retokenize(List<MToken> tokens)
         {
-            var words = new List<object>();
+            // TODO: Implementation of retokenize would go here
+            var words = new List<object>(tokens);
             string currency = null;
-
-            // Implementation of retokenize would go here
-
             return words;
         }
 
         static TokenContext TokenContext(TokenContext ctx, string ps, MToken token)
         {
             bool? vowel = ctx.FutureVowel;
-            // Implementation would go here
+
+            // Update vowel context based on phoneme string if available
+            if (!string.IsNullOrEmpty(ps))
+            {
+                // Find the first character that's either a vowel, consonant or punctuation
+                foreach (char c in ps)
+                {
+                    if (NonQuotePuncts.Contains(c))
+                    {
+                        vowel = null;
+                        break;
+                    }
+                    else if (Lexicon.Vowels.Contains(c) || Lexicon.Consonants.Contains(c))
+                    {
+                        vowel = Lexicon.Vowels.Contains(c);
+                        break;
+                    }
+                }
+            }
+
+            // Check if the token is a form of "to"
             bool futureTo = token.Text == "to" || token.Text == "To" ||
                            (token.Text == "TO" && (token.Tag == "TO" || token.Tag == "IN"));
 
@@ -742,11 +804,10 @@ namespace Kokoro.Misaki
             // Implementation would go here
         }
 
-        Tuple<string, List<MToken>> Convert(string text, bool preprocess = true)
+        Tuple<string, List<MToken>> Convert(string text)
         {
-            var preprocessResult = preprocess
-                ? Preprocess(text)
-                : Tuple.Create(text, new List<string>(), new Dictionary<int, object>());
+            var preprocessResult = Preprocess(text);
+            // Debug.Log($@"{preprocessResult.Item1} {string.Join(" ", preprocessResult.Item2)}");
 
             var tokens = Tokenize(
                 preprocessResult.Item1,
