@@ -2,17 +2,39 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 using Catalyst;
 using Mosaik.Core;
 using System.Threading.Tasks;
 using System.Threading;
-using UnityEngine;
-using Newtonsoft.Json.Linq;
 
 namespace Kokoro.Misaki
 {
+    #region Constants
+    internal static class Constants
+    {
+        public static readonly Regex LinkRegex = new(@"\[([^\]]+)\]\(([^\)]*)\)");
+
+        public static readonly HashSet<char> SubtokenJunks = new("',-._‘’/");
+        public static readonly HashSet<char> Puncts = new(";:,.!?—…\"“”");
+        public static readonly HashSet<char> NonQuotePuncts = new(";:,.!?—…");
+
+
+        public static readonly HashSet<char> UsTaus = new("AIOWYiuæɑəɛɪɹʊʌ");
+        public static readonly HashSet<char> Vowels = new("AIOQWYaiuæɑɒɔəɛɜɪʊʌᵻ");
+        public static readonly HashSet<char> Consonants = new("bdfhjklmnpstvwzðŋɡɹɾʃʒʤʧθ");
+        public static readonly HashSet<string> Ordinals = new() { "st", "nd", "rd", "th" };
+        public static readonly Dictionary<string, Tuple<string, string>> Currencies = new()
+        {
+            { "$", Tuple.Create("dollar", "cent") },
+            { "£", Tuple.Create("pound", "pence") },
+            { "€", Tuple.Create("euro", "cent") }
+        };
+    }
+    #endregion // Constants
+
     #region MToken
     internal record MToken
     {
@@ -36,7 +58,7 @@ namespace Kokoro.Misaki
             _ = underscore ?? new Underscore();
         }
 
-        public class Underscore
+        public record Underscore
         {
             public bool IsHead { get; set; }
             public string Alias { get; set; }
@@ -75,7 +97,7 @@ namespace Kokoro.Misaki
                     {
                         phonemeBuilder.Append(' ');
                     }
-                    phonemeBuilder.Append(tk.Phonemes == null ? unk : tk.Phonemes);
+                    phonemeBuilder.Append(tk.Phonemes ?? unk);
                 }
                 phonemes = phonemeBuilder.ToString();
             }
@@ -142,8 +164,21 @@ namespace Kokoro.Misaki
         }
     }
 
-    internal class Lexicon
+    internal partial class Lexicon
     {
+        // Phonemes and Rating
+        internal struct PsRating
+        {
+            public string Ps { get; set; }
+            public int Rating { get; set; }
+
+            public PsRating(string ps, int rating)
+            {
+                Ps = ps;
+                Rating = rating;
+            }
+        }
+
         readonly LanguageCode _languageCode;
         internal readonly Dictionary<string, object> _golds;
         internal readonly Dictionary<string, object> _silvers;
@@ -157,18 +192,6 @@ namespace Kokoro.Misaki
             _ => throw new NotImplementedException($"Language {_languageCode} is not supported."),
         };
 
-        static readonly Tuple<double, double> _capStresses = Tuple.Create(0.5, 2.0);
-        static readonly HashSet<char> UsTaus = new("AIOWYiuæɑəɛɪɹʊʌ");
-        public static readonly HashSet<char> Vowels = new("AIOQWYaiuæɑɒɔəɛɜɪʊʌᵻ");
-        public static readonly HashSet<char> Consonants = new("bdfhjklmnpstvwzðŋɡɹɾʃʒʤʧθ");
-        static readonly HashSet<string> Ordinals = new() { "st", "nd", "rd", "th" };
-        static readonly Dictionary<string, Tuple<string, string>> Currencies = new()
-        {
-            { "$", Tuple.Create("dollar", "cent") },
-            { "£", Tuple.Create("pound", "pence") },
-            { "€", Tuple.Create("euro", "cent") }
-        };
-
         static readonly HashSet<int> LexiconOrds = new HashSet<int>
         {
             39, 45,
@@ -177,6 +200,9 @@ namespace Kokoro.Misaki
         const string PrimaryStress = "ˈ";
         const string SecondaryStress = "ˌ";
         const string Stresses = SecondaryStress + PrimaryStress;
+
+        const double CAP_STRESS_LOW = 0.5;
+        const double CAP_STRESS_HIGH = 2.0;
 
         static readonly Dictionary<string, string> AddSymbols = new()
         {
@@ -197,62 +223,6 @@ namespace Kokoro.Misaki
             _languageCode = lang;
             _golds = gold;
             _silvers = silver;
-        }
-
-        public static async Task<Lexicon> CreateAsync(LanguageCode lang, CancellationToken cancellationToken)
-        {
-            await Awaitable.MainThreadAsync();
-            bool isBritish = lang switch
-            {
-                LanguageCode.En_GB => true,
-                LanguageCode.En_US => false,
-                _ => throw new NotImplementedException($"Language {lang} is not supported.")
-            };
-            const string prefix = "KokoroTTS/Misaki";
-            string goldPath = isBritish ? $"{prefix}/gb_gold" : $"{prefix}/us_gold";
-            string silverPath = isBritish ? $"{prefix}/gb_silver" : $"{prefix}/us_silver";
-
-            var dicts = await Task.WhenAll(
-                LoadDictResource(goldPath, cancellationToken),
-                LoadDictResource(silverPath, cancellationToken)
-            );
-            cancellationToken.ThrowIfCancellationRequested();
-            var lexicon = new Lexicon(lang, dicts[0], dicts[1]);
-
-            await Awaitable.MainThreadAsync();
-            return lexicon;
-        }
-
-        static async Task<Dictionary<string, object>> LoadDictResource(string path, CancellationToken cancellationToken)
-        {
-            await Awaitable.MainThreadAsync();
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var request = Resources.LoadAsync<TextAsset>(path);
-            await request;
-            var asset = request.asset as TextAsset;
-            string text = asset.text;
-
-            // Run heavy process on BG thread
-            await Awaitable.BackgroundThreadAsync();
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var rawDict = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(text);
-            // JObject -> Dictionary<string, string>
-            var dict = new Dictionary<string, object>(rawDict.Count);
-            foreach (var kv in rawDict)
-            {
-                if (kv.Value is string str)
-                {
-                    dict[kv.Key] = str;
-                }
-                else if (kv.Value is JObject jObj)
-                {
-                    // JObject -> Dictionary<string, string>
-                    dict[kv.Key] = jObj.ToObject<Dictionary<string, string>>();
-                }
-            }
-            return GrowDictionary(dict);
         }
 
         static Dictionary<string, object> GrowDictionary(Dictionary<string, object> d)
@@ -287,21 +257,21 @@ namespace Kokoro.Misaki
             return char.ToUpper(s[0]) + s.Substring(1);
         }
 
-        Tuple<string, int> GetNNP(string word)
+        PsRating GetNNP(string word)
         {
             var ps = word
                 .Where(c => char.IsLetter(c))
                 .Select(c => _golds.TryGetValue(c.ToString().ToUpper(), out var val) ? val as string : null);
 
             if (ps.Contains(null))
-                return Tuple.Create<string, int>(null, 0);
+                return new PsRating(null, 0);
 
             var psStr = ApplyStress(string.Join("", ps), 0);
             var parts = psStr.Split(new[] { SecondaryStress }, 2, StringSplitOptions.None);
-            return Tuple.Create(string.Join(PrimaryStress, parts), 3);
+            return new(string.Join(PrimaryStress, parts), 3);
         }
 
-        Tuple<string, int> GetSpecialCase(string word, string tag, double? stress, TokenContext ctx)
+        PsRating GetSpecialCase(string word, string tag, double? stress, TokenContext ctx)
         {
             if (tag == "ADD" && AddSymbols.TryGetValue(word, out string addSymbol))
             {
@@ -317,47 +287,47 @@ namespace Kokoro.Misaki
             }
             if (word == "a" || word == "A")
             {
-                return Tuple.Create(tag == "DT" ? "ɐ" : "ˈA", 4);
+                return new(tag == "DT" ? "ɐ" : "ˈA", 4);
             }
             if (word == "am" || word == "Am" || word == "AM")
             {
                 if (tag.StartsWith("NN"))
                     return GetNNP(word);
                 else if (ctx.FutureVowel == null || word != "am" || (stress.HasValue && stress > 0))
-                    return Tuple.Create(_golds["am"] as string, 4);
-                return Tuple.Create("ɐm", 4);
+                    return new(_golds["am"] as string, 4);
+                return new("ɐm", 4);
             }
             if (word == "an" || word == "An" || word == "AN")
             {
                 if (word == "AN" && tag.StartsWith("NN"))
                     return GetNNP(word);
-                return Tuple.Create("ɐn", 4);
+                return new("ɐn", 4);
             }
             if (word == "I" && tag == "PRP")
             {
-                return Tuple.Create($"{SecondaryStress}I", 4);
+                return new($"{SecondaryStress}I", 4);
             }
             if ((word == "by" || word == "By" || word == "BY") && GetParentTag(tag) == "ADV")
             {
-                return Tuple.Create("bˈI", 4);
+                return new("bˈI", 4);
             }
             if (word == "to" || word == "To" || (word == "TO" && (tag == "TO" || tag == "IN")))
             {
                 if (ctx.FutureVowel == null)
-                    return Tuple.Create(_golds["to"] as string, 4);
+                    return new(_golds["to"] as string, 4);
                 else if (ctx.FutureVowel == false)
-                    return Tuple.Create("tə", 4);
+                    return new("tə", 4);
                 else
-                    return Tuple.Create("tʊ", 4);
+                    return new("tʊ", 4);
             }
             if (word == "in" || word == "In" || (word == "IN" && tag != "NNP"))
             {
                 string stressStr = (ctx.FutureVowel == null || tag != "IN") ? PrimaryStress : "";
-                return Tuple.Create($"{stressStr}ɪn", 4);
+                return new($"{stressStr}ɪn", 4);
             }
             if (word == "the" || word == "The" || (word == "THE" && tag == "DT"))
             {
-                return Tuple.Create(ctx.FutureVowel == true ? "ði" : "ðə", 4);
+                return new(ctx.FutureVowel == true ? "ði" : "ðə", 4);
             }
             if (tag == "IN" && Regex.IsMatch(word, @"(?i)vs\.?$"))
             {
@@ -368,13 +338,13 @@ namespace Kokoro.Misaki
                 if ((tag == "VBD" || tag == "JJ") && ctx.FutureTo)
                 {
                     if (_golds["used"] is Dictionary<string, string> usedDict && usedDict.TryGetValue("VBD", out string vbd))
-                        return Tuple.Create(vbd, 4);
+                        return new(vbd, 4);
                 }
                 if (_golds["used"] is Dictionary<string, string> usedDefault && usedDefault.TryGetValue("DEFAULT", out string defaultVal))
-                    return Tuple.Create(defaultVal, 4);
+                    return new(defaultVal, 4);
             }
 
-            return Tuple.Create<string, int>(null, 0);
+            return new(null, 0);
         }
 
         static string GetParentTag(string tag) => tag switch
@@ -401,7 +371,7 @@ namespace Kokoro.Misaki
             return word.Substring(1) == word.Substring(1).ToUpper();
         }
 
-        Tuple<string, int> Lookup(string word, string tag, double? stress, TokenContext ctx)
+        PsRating Lookup(string word, string tag, double? stress, TokenContext ctx)
         {
             bool? isNNP = null;
 
@@ -439,14 +409,14 @@ namespace Kokoro.Misaki
             if (ps == null || (isNNP.HasValue && isNNP.Value && !ps.Contains(PrimaryStress)))
             {
                 var nnpResult = GetNNP(word);
-                if (nnpResult.Item1 != null)
+                if (nnpResult.Ps != null)
                     return nnpResult;
             }
 
-            return Tuple.Create(ApplyStress(ps, stress), rating);
+            return new(ApplyStress(ps, stress), rating);
         }
 
-        public static string ApplyStress(string ps, double? stress)
+        static string ApplyStress(string ps, double? stress)
         {
             if (string.IsNullOrEmpty(ps) || !stress.HasValue)
                 return ps;
@@ -458,7 +428,7 @@ namespace Kokoro.Misaki
             else if ((stress == 0 || stress == 0.5 || stress == 1) &&
                     !ps.Contains(PrimaryStress) && !ps.Contains(SecondaryStress))
             {
-                if (!ps.Any(c => Vowels.Contains(c)))
+                if (!ps.Any(c => Constants.Vowels.Contains(c)))
                     return ps;
 
                 // Implementation of restress would go here
@@ -468,7 +438,7 @@ namespace Kokoro.Misaki
                 return ps.Replace(SecondaryStress, PrimaryStress);
             else if (stress > 1 && !ps.Contains(PrimaryStress) && !ps.Contains(SecondaryStress))
             {
-                if (!ps.Any(c => Vowels.Contains(c)))
+                if (!ps.Any(c => Constants.Vowels.Contains(c)))
                     return ps;
 
                 // Implementation of restress would go here
@@ -482,22 +452,24 @@ namespace Kokoro.Misaki
         static bool IsDigit(string text) => digitRegex.IsMatch(text);
 
         // Other methods would be implemented similarly
-        public Tuple<string, int> GetWord(string word, string tag, double? stress, TokenContext ctx)
+        private PsRating GetWord(string word, string tag, double? stress, TokenContext ctx)
         {
-            var specialCase = GetSpecialCase(word, tag, stress, ctx);
-            if (specialCase.Item1 != null)
-                return specialCase;
+            var psRate = GetSpecialCase(word, tag, stress, ctx);
+            if (psRate.Ps != null)
+            {
+                return psRate;
+            }
 
             // The rest of the implementation would go here
 
-            return Tuple.Create<string, int>(null, 0);
+            return new(null, 0);
         }
 
-        public Tuple<string, int> this[MToken tk, TokenContext ctx]
+        internal PsRating this[MToken tk, TokenContext ctx]
         {
             get
             {
-                string word = (tk._.Alias == null ? tk.Text : tk._.Alias)
+                string word = (tk._.Alias ?? tk.Text)
                     .Replace('\u2018', '\'')
                     .Replace('\u2019', '\'');
 
@@ -505,52 +477,61 @@ namespace Kokoro.Misaki
 
                 double? stress = null;
                 if (word != word.ToLower())
-                    stress = word == word.ToUpper() ? _capStresses.Item2 : _capStresses.Item1;
+                {
+                    stress = word == word.ToUpper()
+                        ? CAP_STRESS_HIGH
+                        : CAP_STRESS_LOW;
+                }
 
                 var result = GetWord(word, tk.Tag, stress, ctx);
-                if (result.Item1 != null)
-                    return Tuple.Create(ApplyStress(AppendCurrency(result.Item1, tk._.Currency), tk._.Stress), result.Item2);
-                else if (IsNumber(word, tk._.IsHead))
+                if (result.Ps != null)
+                {
+                    return new(ApplyStress(AppendCurrency(result.Ps, tk._.Currency), tk._.Stress), result.Rating);
+                }
+                if (IsNumber(word, tk._.IsHead))
                 {
                     var numResult = GetNumber(word, tk._.Currency, tk._.IsHead, tk._.NumFlags);
-                    return Tuple.Create(ApplyStress(numResult.Item1, tk._.Stress), numResult.Item2);
+                    return new(ApplyStress(numResult.Ps, tk._.Stress), numResult.Rating);
                 }
-                else if (!word.All(c => LexiconOrds.Contains(c)))
-                    return Tuple.Create<string, int>(null, 0);
-
-                return Tuple.Create<string, int>(null, 0);
+                if (!word.All(c => LexiconOrds.Contains(c)))
+                {
+                    return new(null, 0);
+                }
+                return new(null, 0);
             }
         }
 
         // Helper methods
 
-
-        private string AppendCurrency(string ps, string currency)
+        string AppendCurrency(string ps, string currency)
         {
             if (string.IsNullOrEmpty(currency))
-                return ps;
-
-            if (Currencies.TryGetValue(currency, out var currencyTuple))
             {
-                var currencyStr = StemS(currencyTuple.Item1 + "s", null, null, null).Item1;
-                return currencyStr != null ? $"{ps} {currencyStr}" : ps;
+                return ps;
             }
-
-            return ps;
+            if (!Constants.Currencies.TryGetValue(currency, out var currencyTuple))
+            {
+                return ps;
+            }
+            // else
+            currency = StemS($"{currencyTuple.Item1}s", null, null, null).Ps;
+            return string.IsNullOrEmpty(currency)
+                ? ps
+                : $"{ps} {currency}";
         }
 
-        public Tuple<string, int> StemS(string word, string tag, double? stress, TokenContext ctx)
+        PsRating StemS(string word, string tag, double? stress, TokenContext ctx)
         {
             // Implementation for stemming -s endings
-            return Tuple.Create<string, int>(null, 0);
+            return new(null, 0);
         }
 
-        private static bool IsNumber(string word, bool isHead)
+        static bool IsNumber(string word, bool isHead)
         {
             if (word.All(c => !IsDigit(c.ToString())))
                 return false;
 
-            var suffixes = new List<string> { "ing", "'d", "ed", "'s" }.Concat(Ordinals).Append("s");
+            var suffixes = new List<string> { "ing", "'d", "ed", "'s" }.Concat(Constants.Ordinals).Append("s");
             foreach (var s in suffixes)
             {
                 if (word.EndsWith(s))
@@ -565,10 +546,10 @@ namespace Kokoro.Misaki
                 (isHead && i == 0 && c == '-')).All(x => x);
         }
 
-        public Tuple<string, int> GetNumber(string word, string currency, bool isHead, string numFlags)
+        public PsRating GetNumber(string word, string currency, bool isHead, string numFlags)
         {
             // Implementation for processing numbers
-            return Tuple.Create<string, int>(null, 0);
+            return new(null, 0);
         }
     }
     #endregion
@@ -580,12 +561,6 @@ namespace Kokoro.Misaki
         Lexicon _lexicon;
         readonly string _unk;
         Pipeline _nlp;
-
-        static readonly Regex LinkRegex = new(@"\[([^\]]+)\]\(([^\)]*)\)");
-
-        static readonly HashSet<char> SubtokenJunks = new("',-._‘’/");
-        static readonly HashSet<char> Puncts = new(";:,.!?—…\"“”");
-        static readonly HashSet<char> NonQuotePuncts = new(";:,.!?—…");
 
         public MisakiEnglishG2P(bool trf = false, string unk = "❓")
         {
@@ -628,10 +603,10 @@ namespace Kokoro.Misaki
             int lastEnd = 0;
             text = text.TrimStart();
 
-            foreach (Match m in LinkRegex.Matches(text))
+            foreach (Match m in Constants.LinkRegex.Matches(text))
             {
-                result.Append(text.Substring(lastEnd, m.Index - lastEnd));
-                tokens.AddRange(text.Substring(lastEnd, m.Index - lastEnd).Split());
+                result.Append(text[lastEnd..m.Index]);
+                tokens.AddRange(text[lastEnd..m.Index].Split());
 
                 var f = m.Groups[2].Value;
                 object feature = null;
@@ -643,15 +618,15 @@ namespace Kokoro.Misaki
                 else if (f == "-0.5")
                     feature = -0.5;
                 else if (f.Length > 1 && f[0] == '/' && f[f.Length - 1] == '/')
-                    feature = "/" + f.Substring(1, f.Length - 2);
+                    feature = "/" + f[1..^1];
                 else if (f.Length > 1 && f[0] == '#' && f[f.Length - 1] == '#')
-                    feature = "#" + f.Substring(1, f.Length - 2);
+                    feature = "#" + f[1..^1];
 
                 if (feature != null)
                     features[tokens.Count] = feature;
 
                 result.Append(m.Groups[1].Value);
-                tokens.Add(m.Groups[1].Value);
+                tokens.AddRange(m.Groups[1].Value.Split());
                 lastEnd = m.Index + m.Length;
             }
 
@@ -769,7 +744,7 @@ namespace Kokoro.Misaki
             return words;
         }
 
-        static TokenContext TokenContext(TokenContext ctx, string ps, MToken token)
+        static TokenContext UpdateTokenContext(TokenContext ctx, string ps, MToken token)
         {
             bool? vowel = ctx.FutureVowel;
 
@@ -779,14 +754,14 @@ namespace Kokoro.Misaki
                 // Find the first character that's either a vowel, consonant or punctuation
                 foreach (char c in ps)
                 {
-                    if (NonQuotePuncts.Contains(c))
+                    if (Constants.NonQuotePuncts.Contains(c))
                     {
                         vowel = null;
                         break;
                     }
-                    else if (Lexicon.Vowels.Contains(c) || Lexicon.Consonants.Contains(c))
+                    else if (Constants.Vowels.Contains(c) || Constants.Consonants.Contains(c))
                     {
-                        vowel = Lexicon.Vowels.Contains(c);
+                        vowel = Constants.Vowels.Contains(c);
                         break;
                     }
                 }
@@ -807,7 +782,6 @@ namespace Kokoro.Misaki
         Tuple<string, List<MToken>> Convert(string text)
         {
             var preprocessResult = Preprocess(text);
-            // Debug.Log($@"{preprocessResult.Item1} {string.Join(" ", preprocessResult.Item2)}");
 
             var tokens = Tokenize(
                 preprocessResult.Item1,
@@ -816,22 +790,38 @@ namespace Kokoro.Misaki
             );
 
             tokens = FoldLeft(tokens);
-            var retokenized = Retokenize(tokens);
+
+            // var retokenized = Retokenize(tokens);
 
             var ctx = new TokenContext();
 
-            // Process tokens in reverse order
-            for (int i = retokenized.Count - 1; i >= 0; i--)
-            {
-                var w = retokenized[i];
-                // Process each token
-                // Implementation would go here
-            }
+            // // Process tokens in reverse order
+            // for (int i = retokenized.Count - 1; i >= 0; i--)
+            // {
+            //     var w = retokenized[i];
+            //     // Process each token
+            //     // Implementation would go here
+            // }
 
             // Final processing and result generation
             // Implementation would go here
 
-            return Tuple.Create("", new List<MToken>());
+            // Composite result text
+            var sb = new StringBuilder();
+            foreach (var token in tokens)
+            {
+                if (string.IsNullOrEmpty(token.Phonemes))
+                {
+                    sb.Append(_unk);
+                }
+                else
+                {
+                    sb.Append(token.Text);
+                }
+                sb.Append(token.Whitespace);
+            }
+
+            return Tuple.Create(sb.ToString(), tokens);
         }
     }
     #endregion
