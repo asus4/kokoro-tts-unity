@@ -432,7 +432,7 @@ namespace Kokoro.Misaki
                 if (!ps.Any(c => Constants.Vowels.Contains(c)))
                     return ps;
 
-                return Restress(SecondaryStress, ps);
+                return ReStress(SecondaryStress, ps);
             }
             else if (stress >= 1 && !ps.Contains(PrimaryStress) && ps.Contains(SecondaryStress))
                 return ps.Replace(SecondaryStress, PrimaryStress);
@@ -441,13 +441,13 @@ namespace Kokoro.Misaki
                 if (!ps.Any(c => Constants.Vowels.Contains(c)))
                     return ps;
 
-                return Restress(PrimaryStress, ps);
+                return ReStress(PrimaryStress, ps);
             }
 
             return ps;
         }
 
-        private static string Restress(string stressMarker, string ps)
+        private static string ReStress(string stressMarker, string ps)
         {
             var sb = new StringBuilder();
             bool inserted = false;

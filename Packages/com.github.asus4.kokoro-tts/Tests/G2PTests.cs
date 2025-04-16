@@ -23,7 +23,6 @@ namespace Kokoro.Tests
     [TestFixture]
     public class G2PTests
     {
-        const string DATA_DIR = "Packages/com.github.asus4.kokoro-tts/Tests/Data/";
 
         [TestCase(LanguageCode.En_US, "american_test_data.json")]
         [TestCase(LanguageCode.En_GB, "british_test_data.json")]
@@ -72,6 +71,7 @@ namespace Kokoro.Tests
 
         static async Task<TestData> LoadTestData(string fileName)
         {
+            const string DATA_DIR = "Packages/com.github.asus4.kokoro-tts/Tests/Data/";
             string filePath = Path.Combine(DATA_DIR, fileName);
             string json = await File.ReadAllTextAsync(filePath);
             var testData = JsonUtility.FromJson<TestData>(json);

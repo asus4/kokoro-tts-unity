@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
@@ -8,14 +9,27 @@ namespace Kokoro.Tests
     [TestOf(typeof(SimpleEnglishG2P))]
     public sealed class SimpleEnglishG2PTest
     {
-        IG2P g2pEnUS;
-        IG2P g2pEnGB;
+        static IG2P g2pEnUS;
+        static IG2P g2pEnGB;
 
+        // OneTimeSetUp does not work?
         [SetUp]
         public async Task Setup()
         {
-            g2pEnUS = new SimpleEnglishG2P();
-            g2pEnGB = new SimpleEnglishG2P();
+            if (g2pEnUS != null && g2pEnGB != null)
+            {
+                return;
+            }
+
+            g2pEnUS = new SimpleEnglishG2P()
+            {
+                Verbose = true,
+            };
+            g2pEnGB = new SimpleEnglishG2P()
+            {
+                Verbose = true,
+            };
+
             try
             {
                 await g2pEnUS.InitializeAsync(LanguageCode.En_US, default);
@@ -29,7 +43,7 @@ namespace Kokoro.Tests
 
 
         [TestCase(LanguageCode.En_US, "Hello", "həlˈO")]
-        [TestCase(LanguageCode.En_GB, "Hello", "həlˈO")]
+        [TestCase(LanguageCode.En_GB, "Hello", "həlˈQ")]
         public void SimpleTest(LanguageCode lang, string input, string expected)
         {
             var g2p = lang switch
@@ -40,6 +54,36 @@ namespace Kokoro.Tests
             };
             var result = g2p.Convert(input);
             Assert.AreEqual(expected, result);
+        }
+
+        [TestCase(LanguageCode.En_US, "american_test_data.json")]
+        [TestCase(LanguageCode.En_GB, "british_test_data.json")]
+        public async Task TestSimpleG2P(LanguageCode lang, string fileName)
+        {
+            var g2p = lang switch
+            {
+                LanguageCode.En_US => g2pEnUS,
+                LanguageCode.En_GB => g2pEnGB,
+                _ => throw new NotImplementedException($"Language {lang} is not supported.")
+            };
+
+            var testData = await LoadTestData(fileName);
+            foreach (var item in testData.data)
+            {
+                var phonemes = g2p.Convert(item.text);
+                Assert.That(phonemes, Is.EqualTo(item.phonemes), $"Phoneme mismatch for text: {item.text}");
+            }
+        }
+
+        static async Task<TestData> LoadTestData(string fileName)
+        {
+            const string DATA_DIR = "Packages/com.github.asus4.kokoro-tts/Tests/Data/";
+            string filePath = Path.Combine(DATA_DIR, fileName);
+            string json = await File.ReadAllTextAsync(filePath);
+            var testData = UnityEngine.JsonUtility.FromJson<TestData>(json);
+            Assert.That(testData.data, Is.Not.Empty, "No test data found");
+
+            return testData;
         }
     }
 }

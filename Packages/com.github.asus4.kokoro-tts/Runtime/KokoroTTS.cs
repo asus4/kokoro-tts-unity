@@ -101,6 +101,9 @@ namespace Kokoro
 
         protected override async Awaitable<IReadOnlyCollection<OrtValue>> PreProcessAsync(string input, CancellationToken cancellationToken)
         {
+            await Awaitable.BackgroundThreadAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+
             // 1: Convert input text to phonemes
             string phonemes = G2P.Convert(input);
             // 2. Map phonemes to ids

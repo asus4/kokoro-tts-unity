@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Threading;
+using Catalyst;
 using UnityEngine;
 
 namespace Kokoro
@@ -18,6 +19,7 @@ namespace Kokoro
     {
         /// <summary>
         /// Part-of-Speech Tagging
+        /// https://universaldependencies.org/u/pos/
         /// </summary>
         internal enum Tag
         {
@@ -33,9 +35,18 @@ namespace Kokoro
             DT,
         }
 
-        internal LanguageCode languageCode;
-        internal FrozenDictionary<string, FrozenDictionary<Tag, string>> _golds;
-        internal FrozenDictionary<string, string> _silvers;
+        LanguageCode languageCode;
+        FrozenDictionary<string, FrozenDictionary<Tag, string>> _golds;
+        FrozenDictionary<string, string> _silvers;
+        Pipeline _nlp;
+        const char UNKNOWN = '❓';
+
+        public bool Verbose { get; set; } = false;
+
+        public SimpleEnglishG2P()
+        {
+            Catalyst.Models.English.Register();
+        }
 
         public void Dispose()
         {
@@ -63,6 +74,9 @@ namespace Kokoro
 
             _golds = goldsRaw.Select(FlattenGold).ToFrozenDictionary();
             _silvers = silver.ToFrozenDictionary();
+            // Debug.Log($"G2P: {goldsRaw.Count} golds, {silver.Count} silvers");
+
+            _nlp = await Pipeline.ForAsync(Mosaik.Core.Language.English);
         }
 
         /// <summary>
@@ -126,11 +140,90 @@ namespace Kokoro
             {
                 return string.Empty;
             }
+            var doc = new Document(text.ToString(), Mosaik.Core.Language.English);
 
-            return string.Empty;
+            IDocument document = _nlp.ProcessSingle(doc);
+            var tokens = document.ToTokenList();
+
+            if (Verbose)
+            {
+                UnityEngine.Debug.Log(document.ToJson());
+            }
+
+            var phonemes = new List<string>(tokens.Count);
+            foreach (var token in tokens)
+            {
+                if (TryGet(token, out string phoneme))
+                {
+                    phonemes.Add(phoneme);
+                }
+                else
+                {
+                    phonemes.Add($"{UNKNOWN}");
+                }
+            }
+
+            return string.Join(' ', phonemes);
         }
 
-        internal bool TryGet(string word, Tag tag, out string phoneme)
+        static readonly Dictionary<string, string> PUNCT_TAG_PHONEMES = new()
+        {
+            {"‘", "“"},
+            {"’", "”"},
+            {"«", "“"},
+            {"»", "”"},
+        };
+
+        bool TryGet(IToken token, out string phoneme)
+        {
+            string word = token.Value;
+            if (string.IsNullOrEmpty(word))
+            {
+                phoneme = string.Empty;
+                return true;
+            }
+
+            PartOfSpeech pos = token.POS;
+
+            if (pos == PartOfSpeech.PUNCT)
+            {
+                if (PUNCT_TAG_PHONEMES.TryGetValue(word, out string phonemeValue))
+                {
+                    phoneme = phonemeValue;
+                    return true;
+                }
+                phoneme = token.Value;
+                return true;
+            }
+
+            Tag tag = PosToTag(pos);
+
+            if (TryGet(word, tag, out phoneme))
+            {
+                return true;
+            }
+
+            // Check with capitalization, lowercase, and uppercase
+            if (TryGet(word.CapitalizeFirstLetter(), tag, out phoneme))
+            {
+                return true;
+            }
+            if (TryGet(word.ToLowerInvariant(), tag, out phoneme))
+            {
+                return true;
+            }
+            if (TryGet(word.ToUpperInvariant(), tag, out phoneme))
+            {
+                return true;
+            }
+
+            // TODO: fallback
+
+            phoneme = string.Empty;
+            return false;
+        }
+
+        bool TryGet(string word, Tag tag, out string phoneme)
         {
             if (_golds.TryGetValue(word, out var gold))
             {
@@ -153,5 +246,16 @@ namespace Kokoro
             phoneme = string.Empty;
             return false;
         }
+
+        static Tag PosToTag(PartOfSpeech pos) => pos switch
+        {
+            PartOfSpeech.NONE => Tag.None,
+            PartOfSpeech.ADJ => Tag.ADJ,
+            PartOfSpeech.ADV => Tag.ADV,
+            PartOfSpeech.NOUN => Tag.NOUN,
+            PartOfSpeech.VERB => Tag.VERB,
+            PartOfSpeech.DET => Tag.DT,
+            _ => Tag.DEFAULT,
+        };
     }
 }
