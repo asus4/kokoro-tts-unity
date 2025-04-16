@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Numerics;
 using System.Text;
 using System.Text.RegularExpressions;
 using Catalyst;
@@ -403,7 +402,9 @@ namespace Kokoro.Misaki
                     tag = GetParentTag(tag);
                 }
 
-                ps = dict.TryGetValue(tag, out var tagValue) ? tagValue : dict["DEFAULT"];
+                ps = dict.TryGetValue(tag, out var tagValue)
+                    ? tagValue
+                    : dict["DEFAULT"];
             }
 
             if (ps == null || (isNNP.HasValue && isNNP.Value && !ps.Contains(PrimaryStress)))
@@ -431,8 +432,7 @@ namespace Kokoro.Misaki
                 if (!ps.Any(c => Constants.Vowels.Contains(c)))
                     return ps;
 
-                // Implementation of restress would go here
-                return SecondaryStress + ps;
+                return Restress(SecondaryStress, ps);
             }
             else if (stress >= 1 && !ps.Contains(PrimaryStress) && ps.Contains(SecondaryStress))
                 return ps.Replace(SecondaryStress, PrimaryStress);
@@ -441,11 +441,28 @@ namespace Kokoro.Misaki
                 if (!ps.Any(c => Constants.Vowels.Contains(c)))
                     return ps;
 
-                // Implementation of restress would go here
-                return PrimaryStress + ps;
+                return Restress(PrimaryStress, ps);
             }
 
             return ps;
+        }
+
+        private static string Restress(string stressMarker, string ps)
+        {
+            var sb = new StringBuilder();
+            bool inserted = false;
+            foreach (char c in ps)
+            {
+                if (c == PrimaryStress[0] || c == SecondaryStress[0])
+                    continue; // Remove existing stress markers
+                if (!inserted && Constants.Vowels.Contains(c))
+                {
+                    sb.Append(stressMarker);
+                    inserted = true;
+                }
+                sb.Append(c);
+            }
+            return sb.ToString();
         }
 
         static readonly Regex digitRegex = new(@"^[0-9]+$");
@@ -460,20 +477,24 @@ namespace Kokoro.Misaki
             {
                 return psRate;
             }
-            string wl = word.ToLowerInvariant();
+            string wordLower = word.ToLowerInvariant();
+            string wordUpper = word.ToUpperInvariant();
 
             // 2. Case normalization and fallback to lowercase if needed
-            if (word.Length > 1 && word.Replace("'", string.Empty).All(char.IsLetter) && word != word.ToLowerInvariant() &&
-                (tag != "NNP" || word.Length > 7) && !_golds.ContainsKey(word) && !_silvers.ContainsKey(word) &&
-                (word == word.ToUpperInvariant() || word.Substring(1) == word.Substring(1).ToLowerInvariant()) 
-                &&
-                (_golds.ContainsKey(wl)
-                || _silvers.ContainsKey(wl)
-                || StemS(wl, tag, stress, ctx).Ps != null
-                || StemEd(wl, tag, stress, ctx).Ps != null
-                || StemIng(wl, tag, stress, ctx).Ps != null))
+            if (word.Length > 1
+                && word.Replace("'", string.Empty).All(char.IsLetter)
+                && word != wordLower
+                && (tag != "NNP" || word.Length > 7)
+                && !_golds.ContainsKey(word)
+                && !_silvers.ContainsKey(word)
+                && (word == wordUpper || word.Substring(1) == word.Substring(1).ToLowerInvariant())
+                && (_golds.ContainsKey(wordLower)
+                    || _silvers.ContainsKey(wordLower)
+                    || StemS(wordLower, tag, stress, ctx).Ps != null
+                    || StemEd(wordLower, tag, stress, ctx).Ps != null
+                    || StemIng(wordLower, tag, stress ?? 0.5, ctx).Ps != null))
             {
-                word = wl;
+                word = wordLower;
             }
 
             // 3. IsKnown

@@ -55,6 +55,21 @@ namespace Kokoro.Tests
             }
         }
 
+        [TestCase(LanguageCode.En_US, "american_test_data.json")]
+        [TestCase(LanguageCode.En_GB, "british_test_data.json")]
+        public async Task TestSimpleG2P(LanguageCode lang, string fileName)
+        {
+            using var g2p = new SimpleEnglishG2P();
+            await g2p.InitializeAsync(lang, default);
+
+            var testData = await LoadTestData(fileName);
+            foreach (var item in testData.data)
+            {
+                var phonemes = g2p.Convert(item.text);
+                Assert.That(phonemes, Is.EqualTo(item.phonemes), $"Phoneme mismatch for text: {item.text}");
+            }
+        }
+
         static async Task<TestData> LoadTestData(string fileName)
         {
             string filePath = Path.Combine(DATA_DIR, fileName);
