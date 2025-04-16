@@ -234,7 +234,7 @@ namespace Kokoro.Misaki
                 string k = kv.Key;
                 if (k.Length < 2) { continue; }
 
-                string kLower = k.ToLower();
+                string kLower = k.ToLowerInvariant();
                 if (k == kLower)
                 {
                     string kCapFirst = CapitalizeFirst(k);
@@ -254,14 +254,14 @@ namespace Kokoro.Misaki
         static string CapitalizeFirst(string s)
         {
             if (string.IsNullOrEmpty(s)) { return s; }
-            return char.ToUpper(s[0]) + s.Substring(1);
+            return char.ToUpperInvariant(s[0]) + s[1..];
         }
 
         PsRating GetNNP(string word)
         {
             var ps = word
                 .Where(c => char.IsLetter(c))
-                .Select(c => _golds.TryGetValue(c.ToString().ToUpper(), out var val) ? val as string : null);
+                .Select(c => _golds.TryGetValue(c.ToString().ToUpperInvariant(), out var val) ? val as string : null);
 
             if (ps.Contains(null))
                 return new PsRating(null, 0);
@@ -365,10 +365,10 @@ namespace Kokoro.Misaki
                 return false;
             else if (word.Length == 1)
                 return true;
-            else if (word == word.ToUpper() && _golds.ContainsKey(word.ToLower()))
+            else if (word == word.ToUpperInvariant() && _golds.ContainsKey(word.ToLowerInvariant()))
                 return true;
 
-            return word.Substring(1) == word.Substring(1).ToUpper();
+            return word.Substring(1) == word.Substring(1).ToUpperInvariant();
         }
 
         PsRating Lookup(string word, string tag, double? stress, TokenContext ctx)
@@ -376,9 +376,9 @@ namespace Kokoro.Misaki
             bool? isNNP = null;
 
             bool isContainsGold = _golds.TryGetValue(word, out object psObj);
-            if (word == word.ToUpper() && !isContainsGold)
+            if (word == word.ToUpperInvariant() && !isContainsGold)
             {
-                word = word.ToLower();
+                word = word.ToLowerInvariant();
                 isNNP = tag == "NNP"; // #Lexicon.get_parent_tag(tag) == 'NOUN'
             }
 
@@ -454,15 +454,61 @@ namespace Kokoro.Misaki
         // Other methods would be implemented similarly
         private PsRating GetWord(string word, string tag, double? stress, TokenContext ctx)
         {
+            // 1. Special cases
             var psRate = GetSpecialCase(word, tag, stress, ctx);
             if (psRate.Ps != null)
             {
                 return psRate;
             }
+            string wl = word.ToLowerInvariant();
 
-            // The rest of the implementation would go here
+            // 2. Case normalization and fallback to lowercase if needed
+            if (word.Length > 1 && word.Replace("'", string.Empty).All(char.IsLetter) && word != word.ToLowerInvariant() &&
+                (tag != "NNP" || word.Length > 7) && !_golds.ContainsKey(word) && !_silvers.ContainsKey(word) &&
+                (word == word.ToUpperInvariant() || word.Substring(1) == word.Substring(1).ToLowerInvariant()) 
+                &&
+                (_golds.ContainsKey(wl)
+                || _silvers.ContainsKey(wl)
+                || StemS(wl, tag, stress, ctx).Ps != null
+                || StemEd(wl, tag, stress, ctx).Ps != null
+                || StemIng(wl, tag, stress, ctx).Ps != null))
+            {
+                word = wl;
+            }
 
-            return new(null, 0);
+            // 3. IsKnown
+            if (IsKnown(word, tag))
+            {
+                return Lookup(word, tag, stress, ctx);
+            }
+            // 4. Possessive/plural/suffix forms
+            else if (word.EndsWith("s'") && IsKnown(word.Substring(0, word.Length - 2) + "'s", tag))
+            {
+                return Lookup(word.Substring(0, word.Length - 2) + "'s", tag, stress, ctx);
+            }
+            else if (word.EndsWith("'") && IsKnown(word.Substring(0, word.Length - 1), tag))
+            {
+                return Lookup(word.Substring(0, word.Length - 1), tag, stress, ctx);
+            }
+            // 5. Try stemming for -s, -ed, -ing endings
+            var sStem = StemS(word, tag, stress, ctx);
+            if (sStem.Ps != null)
+            {
+                return sStem;
+            }
+            var edStem = StemEd(word, tag, stress, ctx);
+            if (edStem.Ps != null)
+            {
+                return edStem;
+            }
+            var ingStem = StemIng(word, tag, stress ?? 0.5, ctx);
+            if (ingStem.Ps != null)
+            {
+                return ingStem;
+            }
+
+            // 6. Not found
+            return new PsRating(null, 0);
         }
 
         internal PsRating this[MToken tk, TokenContext ctx]
@@ -476,9 +522,9 @@ namespace Kokoro.Misaki
                 word = word.Normalize(NormalizationForm.FormKC);
 
                 double? stress = null;
-                if (word != word.ToLower())
+                if (word != word.ToLowerInvariant())
                 {
-                    stress = word == word.ToUpper()
+                    stress = word == word.ToUpperInvariant()
                         ? CAP_STRESS_HIGH
                         : CAP_STRESS_LOW;
                 }
@@ -522,8 +568,134 @@ namespace Kokoro.Misaki
 
         PsRating StemS(string word, string tag, double? stress, TokenContext ctx)
         {
-            // Implementation for stemming -s endings
-            return new(null, 0);
+            // Plural/possessive -s/-es/-ies
+            if (string.IsNullOrEmpty(word) || word.Length < 3 || !word.EndsWith("s"))
+                return new PsRating(null, 0);
+
+            string stem = null;
+            if (!word.EndsWith("ss") && IsKnown(word.Substring(0, word.Length - 1), tag))
+            {
+                stem = word.Substring(0, word.Length - 1);
+            }
+            else if ((word.EndsWith("'s") || (word.Length > 4 && word.EndsWith("es") && !word.EndsWith("ies"))) && IsKnown(word.Substring(0, word.Length - 2), tag))
+            {
+                stem = word.Substring(0, word.Length - 2);
+            }
+            else if (word.Length > 4 && word.EndsWith("ies") && IsKnown(word.Substring(0, word.Length - 3) + "y", tag))
+            {
+                stem = word.Substring(0, word.Length - 3) + "y";
+            }
+            else
+            {
+                return new PsRating(null, 0);
+            }
+
+            var stemResult = Lookup(stem, tag, stress, ctx);
+            if (stemResult.Ps == null)
+                return new PsRating(null, 0);
+
+            // Add correct plural ending
+            char last = stemResult.Ps.Length > 0 ? stemResult.Ps[^1] : '\0';
+            string plural;
+            if ("ptkfθ".Contains(last))
+                plural = "s";
+            else if ("szʃʒʧʤ".Contains(last))
+                plural = _languageCode == LanguageCode.En_GB ? "ɪz" : "ᵻz";
+            else
+                plural = "z";
+
+            return new PsRating(stemResult.Ps + plural, stemResult.Rating);
+        }
+
+        PsRating StemEd(string word, string tag, double? stress, TokenContext ctx)
+        {
+            // Past tense -ed
+            if (string.IsNullOrEmpty(word) || word.Length < 4 || !word.EndsWith("d"))
+                return new PsRating(null, 0);
+
+            string stem = null;
+            if (!word.EndsWith("dd") && IsKnown(word.Substring(0, word.Length - 1), tag))
+            {
+                stem = word.Substring(0, word.Length - 1);
+            }
+            else if (word.Length > 4 && word.EndsWith("ed") && !word.EndsWith("eed") && IsKnown(word.Substring(0, word.Length - 2), tag))
+            {
+                stem = word.Substring(0, word.Length - 2);
+            }
+            else
+            {
+                return new PsRating(null, 0);
+            }
+
+            var stemResult = Lookup(stem, tag, stress, ctx);
+            if (stemResult.Ps == null)
+                return new PsRating(null, 0);
+
+            // Add correct -ed ending
+            char last = stemResult.Ps.Length > 0 ? stemResult.Ps[^1] : '\0';
+            string ed;
+            if ("pkfθʃsʧ".Contains(last))
+                ed = "t";
+            else if (last == 'd')
+                ed = _languageCode == LanguageCode.En_GB ? "ɪd" : "ᵻd";
+            else if (last != 't')
+                ed = "d";
+            else if (_languageCode == LanguageCode.En_GB || stemResult.Ps.Length < 2)
+                ed = "ɪd";
+            else if (stemResult.Ps.Length > 1 && "AIOWYiuæɑəɛɪɹʊʌ".Contains(stemResult.Ps[^2]))
+                ed = "ɾᵻd";
+            else
+                ed = "ᵻd";
+
+            return new PsRating(stemResult.Ps + ed, stemResult.Rating);
+        }
+
+        PsRating StemIng(string word, string tag, double? stress, TokenContext ctx)
+        {
+            // Present participle -ing
+            if (string.IsNullOrEmpty(word) || word.Length < 5 || !word.EndsWith("ing"))
+                return new PsRating(null, 0);
+
+            string stem = null;
+            if (word.Length > 5 && IsKnown(word.Substring(0, word.Length - 3), tag))
+            {
+                stem = word.Substring(0, word.Length - 3);
+            }
+            else if (IsKnown(word.Substring(0, word.Length - 3) + "e", tag))
+            {
+                stem = word.Substring(0, word.Length - 3) + "e";
+            }
+            else if (word.Length > 5 && System.Text.RegularExpressions.Regex.IsMatch(word, @"([bcdgklmnprstvxz])\1ing$|cking$") && IsKnown(word.Substring(0, word.Length - 4), tag))
+            {
+                stem = word.Substring(0, word.Length - 4);
+            }
+            else
+            {
+                return new PsRating(null, 0);
+            }
+
+            var stemResult = Lookup(stem, tag, stress, ctx);
+            if (stemResult.Ps == null)
+                return new PsRating(null, 0);
+
+            // Add correct -ing ending
+            string ing;
+            if (_languageCode == LanguageCode.En_GB)
+            {
+                // TODO: British-specific logic for 'əː' endings if needed
+                ing = "ɪŋ";
+            }
+            else if (stemResult.Ps.Length > 1 && stemResult.Ps[^1] == 't' && "AIOWYiuæɑəɛɪɹʊʌ".Contains(stemResult.Ps[^2]))
+            {
+                ing = "ɾɪŋ";
+                stemResult = new PsRating(stemResult.Ps.Substring(0, stemResult.Ps.Length - 1), stemResult.Rating);
+            }
+            else
+            {
+                ing = "ɪŋ";
+            }
+
+            return new PsRating(stemResult.Ps + ing, stemResult.Rating);
         }
 
         static bool IsNumber(string word, bool isHead)

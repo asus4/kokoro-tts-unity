@@ -8,8 +8,12 @@ using UnityEngine;
 
 namespace Kokoro.Tests
 {
+    /// <summary>
+    /// Tests lexicon loading and vocab.
+    /// </summary>
     [TestFixture]
-    public class MisakiEnTests
+    [TestOf(typeof(Lexicon))]
+    public class MisakiEnLexiconTests1
     {
         [TestCase(LanguageCode.En_US)]
         [TestCase(LanguageCode.En_GB)]
@@ -58,6 +62,42 @@ namespace Kokoro.Tests
                     Assert.Fail($"Character '{c}' not included in vocab.");
                 }
             }
+        }
+    }
+
+    [TestFixture]
+    [TestOf(typeof(Lexicon))]
+    public class MisakiEnLexiconTests2
+    {
+        Lexicon lexiconEnUS;
+        Lexicon lexiconEnGB;
+        TokenContext context;
+
+        [SetUp]
+        public async Task SetUp()
+        {
+            lexiconEnUS = await Lexicon.CreateAsync(LanguageCode.En_US, default);
+            lexiconEnGB = await Lexicon.CreateAsync(LanguageCode.En_GB, default);
+            context = new TokenContext();
+
+            Assert.IsNotNull(lexiconEnUS);
+            Assert.IsNotNull(lexiconEnGB);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            // Nosing to do for now
+        }
+
+        [TestCase(LanguageCode.En_US, "Hello", "həlˈO")]
+        public void SimpleTest(LanguageCode code, string input, string expected)
+        {
+            Lexicon lexicon = code == LanguageCode.En_US ? lexiconEnUS : lexiconEnGB;
+            var token = new MToken(input, null, null);
+            var result = lexicon[token, context];
+
+            Assert.AreEqual(expected, result.Ps);
         }
     }
 }
