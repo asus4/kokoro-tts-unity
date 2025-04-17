@@ -8,8 +8,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Threading;
 using Catalyst;
-using MessagePack;
-using MessagePack.Resolvers;
 using UnityEngine;
 
 namespace Kokoro
@@ -45,18 +43,8 @@ namespace Kokoro
 
         public bool Verbose { get; set; } = false;
 
-
-        // Make MessagePack AOT safe
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        static void Initialize()
+        public SimpleEnglishG2P()
         {
-            StaticCompositeResolver.Instance.Register(
-                // MessagePack.Resolvers.GeneratedResolver.Instance,
-                BuiltinResolver.Instance,
-                AttributeFormatterResolver.Instance,
-                PrimitiveObjectResolver.Instance
-            );
-            MessagePackSerializer.DefaultOptions = MessagePackSerializerOptions.Standard.WithResolver(StaticCompositeResolver.Instance);
             Catalyst.Models.English.Register();
         }
 
