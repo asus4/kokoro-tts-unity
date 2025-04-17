@@ -8,6 +8,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Threading;
 using Catalyst;
+using MessagePack;
+using MessagePack.Resolvers;
 using UnityEngine;
 
 namespace Kokoro
@@ -45,6 +47,13 @@ namespace Kokoro
 
         public SimpleEnglishG2P()
         {
+            // AOT safe setting
+            var resolver = StaticCompositeResolver.Instance;
+            resolver.Register(
+                StandardResolver.Instance
+            );
+            MessagePackSerializer.DefaultOptions = MessagePackSerializerOptions.Standard.WithResolver(resolver);
+
             Catalyst.Models.English.Register();
         }
 
