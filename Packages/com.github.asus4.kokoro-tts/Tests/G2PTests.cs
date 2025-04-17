@@ -23,27 +23,11 @@ namespace Kokoro.Tests
     [TestFixture]
     public class G2PTests
     {
-
         [TestCase(LanguageCode.En_US, "american_test_data.json")]
         [TestCase(LanguageCode.En_GB, "british_test_data.json")]
         public async Task TestMisakiEn(LanguageCode lang, string fileName)
         {
             using var g2p = new MisakiEnglishG2P();
-            await g2p.InitializeAsync(lang, default);
-
-            var testData = await LoadTestData(fileName);
-            foreach (var item in testData.data)
-            {
-                var phonemes = g2p.Convert(item.text);
-                Assert.That(phonemes, Is.EqualTo(item.phonemes), $"Phoneme mismatch for text: {item.text}");
-            }
-        }
-
-        [TestCase(LanguageCode.En_US, "american_test_data.json")]
-        [TestCase(LanguageCode.En_GB, "british_test_data.json")]
-        public async Task TestESpeakG2P(LanguageCode lang, string fileName)
-        {
-            using var g2p = new ESpeakG2P();
             await g2p.InitializeAsync(lang, default);
 
             var testData = await LoadTestData(fileName);

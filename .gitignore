@@ -80,9 +80,7 @@ crashlytics-build.properties
 # FIXME: remove later
 *.onnx
 *.onnx.meta
-espeak-ng-data
 Assets/StreamingAssets/Voices/*.bin*
-Packages/com.github.asus4.espeak-ng/Plugins
 
 # NuGet for Unity
 Assets/Packages/

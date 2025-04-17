@@ -11,8 +11,7 @@
   "unityRelease": "0f1",
   "dependencies": {
     "com.unity.serialization": "3.1.2",
-    "com.unity.modules.audio": "1.0.0",
-    "com.unity.nuget.newtonsoft-json": "3.2.1"
+    "com.unity.modules.audio": "1.0.0"
   },
   "repository": {
     "type": "git",

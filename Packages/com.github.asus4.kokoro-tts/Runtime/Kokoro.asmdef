@@ -3,9 +3,7 @@
     "rootNamespace": "Kokoro",
     "references": [
         "GUID:8600c83db57f44fe2aa05f4cf22420bf",
-        "GUID:effe5775fa53c49a39f54ea0433a395b",
-        "GUID:5c0810024e306495ca238b09dc6f357f",
-        "GUID:2765e68924a08a94ea0ea66b31c0168f"
+        "GUID:effe5775fa53c49a39f54ea0433a395b"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
