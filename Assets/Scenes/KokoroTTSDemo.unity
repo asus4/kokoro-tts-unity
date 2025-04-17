@@ -119,6 +119,52 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!28 &223083951
+Texture2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: AudioSpectrum256
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 3
+  m_Width: 256
+  m_Height: 1
+  m_CompleteImageSize: 1024
+  m_MipsStripped: 0
+  m_TextureFormat: 18
+  m_MipCount: 1
+  m_IsReadable: 1
+  m_IsPreProcessed: 0
+  m_IgnoreMipmapLimit: 1
+  m_MipmapLimitGroupName: 
+  m_StreamingMipmaps: 0
+  m_StreamingMipmapsPriority: 0
+  m_VTOnly: 0
+  m_AlphaIsTransparency: 0
+  m_ImageCount: 1
+  m_TextureDimension: 2
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_LightmapFormat: 0
+  m_ColorSpace: 1
+  m_PlatformBlob: 
+  image data: 1024
+  _typelessdata: 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  m_StreamData:
+    serializedVersion: 2
+    offset: 0
+    size: 0
+    path: 
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -505,8 +551,7 @@ MonoBehaviour:
   - zm_yunxi
   - zm_yunxia
   - zm_yunyang
-  speechText: Life is like a box of chocolates. You never know what you're gonna
-    get.
+  speechText: Life is like a box of chocolate. You never know what you're gonna get.
   speechSpeed: 1
 --- !u!82 &767039613
 AudioSource:
@@ -666,7 +711,7 @@ GameObject:
   - component: {fileID: 1072667574}
   - component: {fileID: 1072667573}
   - component: {fileID: 1072667572}
-  - component: {fileID: 1072667571}
+  - component: {fileID: 1072667575}
   m_Layer: 0
   m_Name: VFX
   m_TagString: Untagged
@@ -689,26 +734,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1072667571
-MonoBehaviour:
-  m_ObjectHideFlags: 2
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1072667569}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c69177d2544c73419d14a4bf4817f3e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_CountProperty:
-    m_Name: SpectrumCount
-  m_TextureProperty:
-    m_Name: SpectrumTexture
-  FFTWindow: 5
-  Samples: 64
-  Mode: 0
-  AudioSource: {fileID: 767039613}
 --- !u!114 &1072667572
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -723,7 +748,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ExecuteInEditor: 1
   m_Bindings:
-  - {fileID: 1072667571}
+  - {fileID: 1072667575}
   m_VisualEffect: {fileID: 1072667574}
 --- !u!73398921 &1072667573
 VFXRenderer:
@@ -797,6 +822,9 @@ VisualEffect:
       - m_Value: 64
         m_Name: SpectrumCount
         m_Overridden: 1
+      - m_Value: 256
+        m_Name: AudioCount
+        m_Overridden: 1
     m_Int:
       m_Array: []
     m_Matrix4x4f:
@@ -807,12 +835,34 @@ VisualEffect:
       m_Array: []
     m_NamedObject:
       m_Array:
-      - m_Value: {fileID: 1147968407}
+      - m_Value: {fileID: 1278756919}
         m_Name: SpectrumTexture
+        m_Overridden: 1
+      - m_Value: {fileID: 223083951}
+        m_Name: AudioTexture
         m_Overridden: 1
     m_Bool:
       m_Array: []
---- !u!28 &1147968407
+--- !u!114 &1072667575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1072667569}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b6750eb1c153e497b9d88a78d3a16e22, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_CountProperty:
+    m_Name: AudioCount
+  m_TextureProperty:
+    m_Name: AudioTexture
+  Samples: 256
+  Mode: 1
+  AudioSource: {fileID: 0}
+--- !u!28 &1278756919
 Texture2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
