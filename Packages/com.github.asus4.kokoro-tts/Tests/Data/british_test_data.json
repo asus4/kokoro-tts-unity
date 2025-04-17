@@ -10,11 +10,11 @@
     },
     {
       "text": "«Bonjour»",
-      "phonemes": "“bɒnʒˈʊə❓"
+      "phonemes": "“bɒnʒˈʊə”"
     },
     {
       "text": "«Test «nested» quotes»",
-      "phonemes": "“tˈɛst “nˈɛstɪd❓ kwˈQts❓"
+      "phonemes": "“tˈɛst “nˈɛstɪd” kwˈQts”"
     },
     {
       "text": "(Hello)",

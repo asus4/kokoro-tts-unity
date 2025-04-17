@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Kokoro;
-using Microsoft.ML.OnnxRuntime.Examples;
+using Microsoft.ML.OnnxRuntime.Unity;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -23,7 +23,10 @@ sealed class KokoroTTSDemo : MonoBehaviour
     RemoteFile modelUrl = new("https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX/resolve/main/onnx/model_fp16.onnx");
 
     [SerializeField]
-    KokoroTTS.Options options;
+    TextToSpeechOptions options;
+
+    [SerializeField]
+    LanguageCode language = LanguageCode.En_US;
 
     [SerializeField]
     [ContextMenuItem("Update Voice List", nameof(UpdateVoiceList))]
@@ -52,6 +55,7 @@ sealed class KokoroTTSDemo : MonoBehaviour
         cancellationToken.ThrowIfCancellationRequested();
 
         tts = new KokoroTTS(modelData, options);
+        await tts.InitializeLanguageAsync(language, cancellationToken);
         Debug.Log("TTS created");
 
         // Setup UI
@@ -60,7 +64,7 @@ sealed class KokoroTTSDemo : MonoBehaviour
 
         // Filter voice list to only supported language
         var voicesDropdown = root.Q<DropdownField>("VoicesDropdown");
-        char selectedLangPrefix = KokoroTTS.GetLanguagePrefix(options.language);
+        char selectedLangPrefix = KokoroTTS.GetLanguagePrefix(language);
         voicesDropdown.choices = allVoices
             .Where(voice => voice[0] == selectedLangPrefix)
             .ToList();

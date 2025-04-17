@@ -10,11 +10,11 @@
     },
     {
       "text": "«Bonjour»",
-      "phonemes": "“bɑnʒˈʊɹ❓"
+      "phonemes": "“bɑnʒˈʊɹ”"
     },
     {
       "text": "«Test «nested» quotes»",
-      "phonemes": "“tˈɛst “nˈɛstᵻd❓ kwˈOts❓"
+      "phonemes": "“tˈɛst “nˈɛstᵻd” kwˈOts”"
     },
     {
       "text": "(Hello)",
@@ -26,11 +26,11 @@
     },
     {
       "text": "こんにちは、世界！",
-      "phonemes": "❓❓❓"
+      "phonemes": "❓"
     },
     {
       "text": "これはテストです：はい？",
-      "phonemes": "❓❓❓”"
+      "phonemes": "❓"
     },
     {
       "text": "Hello World",
@@ -38,11 +38,11 @@
     },
     {
       "text": "Hello   World",
-      "phonemes": "həlˈO ❓❓ wˈɜɹld"
+      "phonemes": "həlˈO wˈɜɹld"
     },
     {
       "text": "Hello\n   \nWorld",
-      "phonemes": "həlˈO❓❓❓❓❓ wˈɜɹld"
+      "phonemes": "həlˈO wˈɜɹld"
     },
     {
       "text": "Dr. Smith",

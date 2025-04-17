@@ -23,12 +23,6 @@ namespace Kokoro
     /// </summary>
     public sealed class KokoroTTS : TextToSpeechInference
     {
-        [Serializable]
-        public class Options : TextToSpeechOptions
-        {
-            public LanguageCode language = LanguageCode.En_US;
-        }
-
         const int STYLE_DIM = 256;
 
         readonly List<OrtValue> inputs;
@@ -41,7 +35,7 @@ namespace Kokoro
         public float Speed { get; set; } = 1.0f;
         protected override int AudioSampleRate => 24000;
 
-        public KokoroTTS(byte[] modelData, Options options) : base(modelData, options)
+        public KokoroTTS(byte[] modelData, TextToSpeechOptions options) : base(modelData, options)
         {
             inputs = new List<OrtValue>(3);
 
@@ -57,7 +51,17 @@ namespace Kokoro
             inputs.Add(meta["style"].CreateTensorOrtValue());
             inputs.Add(meta["speed"].CreateTensorOrtValue());
 
-            G2P = new ESpeakG2P();
+            // G2P = new ESpeakG2P();
+            var g2p = new SimpleEnglishG2P()
+            {
+                Verbose = Debug.isDebugBuild,
+            };
+            G2P = g2p;
+        }
+
+        public async Awaitable InitializeLanguageAsync(LanguageCode lang, CancellationToken cancellationToken)
+        {
+            await G2P.InitializeAsync(lang, cancellationToken);
         }
 
         protected override void Dispose(bool disposing)

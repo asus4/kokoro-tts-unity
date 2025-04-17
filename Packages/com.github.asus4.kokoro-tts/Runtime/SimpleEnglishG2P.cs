@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Frozen;
-using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -150,20 +150,37 @@ namespace Kokoro
                 UnityEngine.Debug.Log(document.ToJson());
             }
 
-            var phonemes = new List<string>(tokens.Count);
-            foreach (var token in tokens)
+            var phonemes = new StringBuilder(text.Length);
+            for (int i = 0; i < tokens.Count; i++)
             {
+                var token = tokens[i];
                 if (TryGet(token, out string phoneme))
                 {
-                    phonemes.Add(phoneme);
+                    phonemes.Append(phoneme);
                 }
                 else
                 {
-                    phonemes.Add($"{UNKNOWN}");
+                    phonemes.Append(UNKNOWN);
+                }
+
+                // Fill characters between tokens
+                if (i < tokens.Count - 1)
+                {
+                    var nextToken = tokens[i + 1];
+                    var spaces = text[(token.End + 1)..nextToken.Begin].ToString()
+                        .Select(c => c switch
+                        {
+                            ' ' or '\n' or '\t' => ' ',
+                            _ => UNKNOWN
+                        })
+                        .Distinct();
+                    foreach (char c in spaces)
+                    {
+                        phonemes.Append(c);
+                    }
                 }
             }
-
-            return string.Join(' ', phonemes);
+            return phonemes.ToString();
         }
 
         static readonly Dictionary<string, string> PUNCT_TAG_PHONEMES = new()
