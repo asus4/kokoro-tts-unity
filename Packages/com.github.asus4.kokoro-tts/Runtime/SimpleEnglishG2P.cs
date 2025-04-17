@@ -45,21 +45,23 @@ namespace Kokoro
 
         public bool Verbose { get; set; } = false;
 
-        public SimpleEnglishG2P()
-        {
-            // AOT safe setting
-            var resolver = StaticCompositeResolver.Instance;
-            resolver.Register(
-                StandardResolver.Instance
-            );
-            MessagePackSerializer.DefaultOptions = MessagePackSerializerOptions.Standard.WithResolver(resolver);
 
+        // Make MessagePack AOT safe
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        static void Initialize()
+        {
+            StaticCompositeResolver.Instance.Register(
+                // MessagePack.Resolvers.GeneratedResolver.Instance,
+                BuiltinResolver.Instance,
+                AttributeFormatterResolver.Instance,
+                PrimitiveObjectResolver.Instance
+            );
+            MessagePackSerializer.DefaultOptions = MessagePackSerializerOptions.Standard.WithResolver(StaticCompositeResolver.Instance);
             Catalyst.Models.English.Register();
         }
 
         public void Dispose()
         {
-
         }
 
         public async Task InitializeAsync(LanguageCode lang, CancellationToken cancellationToken)
