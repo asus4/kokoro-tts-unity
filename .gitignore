@@ -76,11 +76,9 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
-# Custom
-# FIXME: remove later
-*.onnx
-*.onnx.meta
-Assets/StreamingAssets/Voices/*.bin*
 
 # NuGet for Unity
+# TODO: currently using forked version of Catalyst.
+# Consider committing them or using forked version instead of NuGet.
+# https://github.com/curiosity-ai/catalyst/pull/117
 Assets/Packages/
