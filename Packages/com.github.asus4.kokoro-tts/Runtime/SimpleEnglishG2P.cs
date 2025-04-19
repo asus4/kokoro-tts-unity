@@ -35,6 +35,15 @@ namespace Kokoro
             DT,
         }
 
+        static readonly HashSet<char> US_TAUS = new("AIOWYiuæɑəɛɪɹʊʌ");
+        static readonly Dictionary<string, string> PUNCT_TAG_PHONEMES = new()
+        {
+            {"‘", "“"},
+            {"’", "”"},
+            {"«", "“"},
+            {"»", "”"},
+        };
+
         LanguageCode languageCode;
         FrozenDictionary<string, FrozenDictionary<Tag, string>> _golds;
         FrozenDictionary<string, string> _silvers;
@@ -71,15 +80,15 @@ namespace Kokoro
             var silver = await LoadJsonFromResources<Dictionary<string, string>>(silverPath);
             await Awaitable.BackgroundThreadAsync();
 
+            // TODO: Consider using GetAlternateLookup for performance, (which is not supported in Unity yet)
             _golds = goldsRaw.Select(FlattenGold).ToFrozenDictionary();
             _silvers = silver.ToFrozenDictionary();
-            // Debug.Log($"G2P: {goldsRaw.Count} golds, {silver.Count} silvers");
 
             _nlp = await Pipeline.ForAsync(Mosaik.Core.Language.English);
         }
 
         /// <summary>
-        /// Post-process For gold.json:
+        /// Post-process for gold.json:
         /// Flatten (string || Dictionary<string, string>) to FrozenDictionary<Tag, string>
         /// </summary>
         /// <param name="kv"></param>
@@ -159,6 +168,10 @@ namespace Kokoro
                 }
                 else
                 {
+                    if (Verbose)
+                    {
+                        UnityEngine.Debug.Log(token.ToDebugString());
+                    }
                     phonemes.Append(UNKNOWN);
                 }
 
@@ -182,13 +195,6 @@ namespace Kokoro
             return phonemes.ToString();
         }
 
-        static readonly Dictionary<string, string> PUNCT_TAG_PHONEMES = new()
-        {
-            {"‘", "“"},
-            {"’", "”"},
-            {"«", "“"},
-            {"»", "”"},
-        };
 
         bool TryGet(IToken token, out string phoneme)
         {
@@ -201,6 +207,7 @@ namespace Kokoro
 
             PartOfSpeech pos = token.POS;
 
+            // Get phoneme for Punctuation
             if (pos == PartOfSpeech.PUNCT)
             {
                 if (PUNCT_TAG_PHONEMES.TryGetValue(word, out string phonemeValue))
@@ -212,14 +219,14 @@ namespace Kokoro
                 return true;
             }
 
+            // Default lookup
             Tag tag = PosToTag(pos);
-
             if (TryGet(word, tag, out phoneme))
             {
                 return true;
             }
 
-            // Check with capitalization, lowercase, and uppercase
+            // Lookup with capitalization, lowercase, and uppercase
             if (TryGet(word.CapitalizeFirstLetter(), tag, out phoneme))
             {
                 return true;
@@ -233,35 +240,94 @@ namespace Kokoro
                 return true;
             }
 
-            // TODO: fallback
+            // Stemmed lookup (s, ed, ing)
+            if (TryGetStemmed(token, tag, out phoneme))
+            {
+                return true;
+            }
+
+            // TODO: Implement transformer based fallback here
+            // https://github.com/hexgrad/misaki/pull/74
 
             phoneme = string.Empty;
             return false;
         }
 
+        /// <summary>
+        /// Simply get phoneme from gold or silver Lexicon. No fallback.
+        /// </summary>
+        /// <param name="word">A word</param>
+        /// <param name="tag">POS Tag</param>
+        /// <param name="phoneme">Result phoneme</param>
+        /// <returns>True if phoneme is found, otherwise false.</returns>
         bool TryGet(string word, Tag tag, out string phoneme)
         {
             if (_golds.TryGetValue(word, out var gold))
             {
-                if (gold.TryGetValue(tag, out string goldPhoneme))
+                if (gold.TryGetValue(tag, out phoneme)
+                    // Might contain null in gold.json
+                    && !string.IsNullOrEmpty(phoneme))
                 {
-                    phoneme = goldPhoneme;
                     return true;
                 }
-                if (gold.TryGetValue(Tag.DEFAULT, out goldPhoneme))
+                if (gold.TryGetValue(Tag.DEFAULT, out phoneme))
                 {
-                    phoneme = goldPhoneme;
                     return true;
                 }
             }
-            if (_silvers.TryGetValue(word, out string silver))
-            {
-                phoneme = silver.ToString();
-                return true;
-            }
-            phoneme = string.Empty;
-            return false;
+            return _silvers.TryGetValue(word, out phoneme);
         }
+
+
+        bool TryGetStemmed(IToken token, Tag tag, out string phoneme)
+        {
+            if (!token.TryGetLemma(out string lemma, out string stem))
+            {
+                phoneme = string.Empty;
+                return false;
+            }
+            if (!TryGet(lemma, tag, out string lemmaPhoneme))
+            {
+                phoneme = string.Empty;
+                return false;
+            }
+
+            bool isBritish = languageCode == LanguageCode.En_GB;
+
+            switch (stem)
+            {
+                // https://en.wiktionary.org/wiki/-s
+                case "s":
+                    phoneme = lemmaPhoneme + lemmaPhoneme[^1] switch
+                    {
+                        char c when "ptkfθ".Contains(c) => "z",
+                        char c when "szʃʒʧʤ".Contains(c) => isBritish ? "ɪs" : "ᵻz",
+                        _ => "z",
+                    };
+                    return true;
+                // https://en.wiktionary.org/wiki/-ed
+                case "ed":
+                    phoneme = lemmaPhoneme[^1] switch
+                    {
+                        char c when "pkfθʃsʧ".Contains(c) => lemmaPhoneme + "t",
+                        'd' => lemmaPhoneme + (isBritish ? "ɪd" : "ᵻd"),
+                        char c when c != 't' => lemmaPhoneme + "d",
+                        char _ when isBritish || lemmaPhoneme.Length < 2 => lemmaPhoneme + "ɪd",
+                        char _ when US_TAUS.Contains(lemmaPhoneme[^2]) => lemmaPhoneme[..-1] + "ɾᵻd",
+                        _ => lemmaPhoneme + "ᵻd",
+                    };
+                    return true;
+                // ing
+                default:
+                    if (Verbose)
+                    {
+                        UnityEngine.Debug.Log($"Unhandled stem: {stem} for lemma: {lemma}, phoneme: {lemmaPhoneme}");
+                    }
+                    phoneme = string.Empty;
+                    return false;
+            }
+        }
+
 
         static Tag PosToTag(PartOfSpeech pos) => pos switch
         {
@@ -273,5 +339,7 @@ namespace Kokoro
             PartOfSpeech.DET => Tag.DT,
             _ => Tag.DEFAULT,
         };
+
+
     }
 }

@@ -44,6 +44,10 @@ namespace Kokoro.Tests
 
         [TestCase(LanguageCode.En_US, "Hello", "həlˈO")]
         [TestCase(LanguageCode.En_GB, "Hello", "həlˈQ")]
+        [TestCase(LanguageCode.En_US, "chocolates", "ʧˈɑkᵊlətz")]
+        [TestCase(LanguageCode.En_US, "Cat's tail", "kˈæts tˈAl")]
+        [TestCase(LanguageCode.En_US, "X's mark", "ˈɛksᵻz mˈɑɹk")]
+        [TestCase(LanguageCode.En_US, "washed", "wˌɔʃt")]
         public void SimpleTest(LanguageCode lang, string input, string expected)
         {
             var g2p = lang switch
