@@ -318,6 +318,15 @@ namespace Kokoro
                     };
                     return true;
                 // ing
+                case "ing":
+                    phoneme = lemmaPhoneme + lemmaPhoneme[^1] switch
+                    {
+                        char c when "ptkfθʃszʧʤ".Contains(c) => "ɪŋ",
+                        char c when "bdgʒ".Contains(c) => "ɪn",
+                        char c when US_TAUS.Contains(c) => "ᵻŋ",
+                        _ => lemmaPhoneme + "ɪŋ",
+                    };
+                    return true;
                 default:
                     if (Verbose)
                     {
