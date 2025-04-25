@@ -8,7 +8,9 @@ https://github.com/user-attachments/assets/a4d7aefb-d606-40cb-bf7b-73db95798857
 
 ### Fix Errors
 
-Currently, the project will show the following error on Unity6 (6000.0.46f1). Open the `AnimationClipUpgrader.cs` and manually edit the file to fix the errors.
+Currently, the project displays the following error in Unity 6 (6000.0.46f1). Open the `AnimationClipUpgrader.cs` and manually edit the file to fix the errors.
+
+![errors](https://github.com/user-attachments/assets/a0468e02-1f25-409e-80f0-eb465a9fb838)
 
 ```log
 Library/PackageCache/com.unity.render-pipelines.universal@18be219df6cb/Editor/AnimationClipUpgrader.cs(186,33): error CS0576: Namespace '<global namespace>' contains a definition conflicting with alias 'UID'
