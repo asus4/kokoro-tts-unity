@@ -4,11 +4,11 @@ Work in Progress: A port of the [Kokoro](https://github.com/hexgrad/kokoro/) TTS
 
 https://github.com/user-attachments/assets/a4d7aefb-d606-40cb-bf7b-73db95798857
 
-## How to test
+## How to run
 
 ### Fix Errors
 
-Currently, the project displays the following error in Unity 6 (6000.0.46f1). Open the `AnimationClipUpgrader.cs` and manually edit the file to fix the errors.
+Currently, the project shows the following error in Unity 6 (6000.0.46f1). Open the `AnimationClipUpgrader.cs` and manually edit the file to fix the errors.
 
 ![errors](https://github.com/user-attachments/assets/a0468e02-1f25-409e-80f0-eb465a9fb838)
 
